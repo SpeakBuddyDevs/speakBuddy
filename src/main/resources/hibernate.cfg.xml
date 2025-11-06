@@ -7,9 +7,9 @@
     <session-factory>
         <!-- Configuración de la conexión a MySQL -->
         <property name="hibernate.connection.driver_class">com.mysql.cj.jdbc.Driver</property>
-        <property name="hibernate.connection.url">jdbc:mysql://localhost:3306/mi_base_datos?useSSL=false&amp;serverTimezone=UTC</property>
+        <property name="hibernate.connection.url">jdbc:mysql://localhost:3307/speakbuddy_db?useSSL=false&amp;serverTimezone=UTC</property>
         <property name="hibernate.connection.username">root</property>
-        <property name="hibernate.connection.password">tu_contraseña</property>
+        <property name="hibernate.connection.password">root</property>
 
         <!-- Mostrar SQL en consola -->
         <property name="hibernate.show_sql">true</property>
