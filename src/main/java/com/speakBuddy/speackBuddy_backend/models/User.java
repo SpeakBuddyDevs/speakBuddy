@@ -20,6 +20,8 @@ public class User {
     private Integer id;
     private String profilePicture;
     private String name;
+    private String surname;
+    private String username;
     private String email;
     private String password;
     private String nativeLanguage;
