@@ -1,8 +1,5 @@
 package com.speakBuddy.speackBuddy_backend.models;
 
-
-
-
 import jakarta.persistence.*;
 import lombok.*;
 
