@@ -53,6 +53,12 @@ public class User {
     )
     private Set<UserLanguagesLearning> languagesToLearn = new HashSet<>();
 
+    @Column(nullable = false)
+    private Integer level = 1;
+
+    @Column(nullable = false)
+    private Long experiencePoints = 0L;
+
     private String profilePicture;
 
     @CreationTimestamp
