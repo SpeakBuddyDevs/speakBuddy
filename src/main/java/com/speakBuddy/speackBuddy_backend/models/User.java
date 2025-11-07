@@ -1,5 +1,6 @@
 package com.speakBuddy.speackBuddy_backend.models;
 
+import com.speakBuddy.speackBuddy_backend.security.Role;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -26,5 +27,5 @@ public class User {
     private String password;
     private String nativeLanguage;
     private String languageToLearn;
-    private boolean isPremium;
+    private Role role;
 }
