@@ -4,6 +4,9 @@ import com.speakBuddy.speackBuddy_backend.security.Role;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.HashSet;
+import java.util.Set;
+
 
 @Entity
 @Table(name = "users")
@@ -27,7 +30,12 @@ public class User {
     @ManyToOne
     private Language nativeLanguage;
 
-    private String languageToLearn;
+    @OneToMany(
+        mappedBy = "user",
+        cascade = CascadeType.ALL, // Si se borra/guarda el usuario, se borran/guardan sus relaciones
+        orphanRemoval = true // Si se quita un idioma de esta lista, se borra de la BD
+    )
+    private Set<UserLanguagesLearning> languagesToLearn = new HashSet<>();
 
     private Role role;
 }
