@@ -15,7 +15,7 @@ public class AuthService {
             return false; //El usuario no existe
         }
 
-        return BCrypt.checkpw(password, user.getPasswordHash());
+        return BCrypt.checkpw(password, user.getPassword());
     }
 
 }
