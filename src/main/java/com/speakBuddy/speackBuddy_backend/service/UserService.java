@@ -1,11 +1,12 @@
 package com.speakBuddy.speackBuddy_backend.service;
 
 import com.speakBuddy.speackBuddy_backend.dto.RegisterRequestDTO;
+import com.speakBuddy.speackBuddy_backend.models.Language;
 import com.speakBuddy.speackBuddy_backend.models.User;
 import com.speakBuddy.speackBuddy_backend.repository.LanguageRepository;
 import com.speakBuddy.speackBuddy_backend.repository.UserRepository;
+import com.speakBuddy.speackBuddy_backend.security.Role;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -25,21 +26,36 @@ public class UserService {
 
 
     // Método principal de lógica de HU 1.1
-    public User registerUSer(RegisterRequestDTO request) {
+    public User registerUser(RegisterRequestDTO request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("El email ya está registrado");
         }
 
-        String username = request.getName() + " " + request.getSurname();
+        Language nativeLanguage = languageRepository.findById(request.getNativeLanguageId())
+                .orElseThrow(() -> new RuntimeException("Idioma nativo no encontrado"));
 
-        if (userRepository.existsByUsername(username)) {
-            throw new RuntimeException("El nombre de usuario ya está en uso");
-        }
+        String publicUsername = request.getName() + " " + request.getSurname();
+
+        User newUser = new User();
+
+        newUser.setEmail(request.getEmail());
+        newUser.setPassword(passwordEncoder.encode(request.getPassword()));
+        newUser.setName(request.getName());
+        newUser.setSurname(request.getSurname());
+        newUser.setUsername(publicUsername);
+
+        // Asignar la entidad relacionada de Language
+        newUser.setNativeLanguage(nativeLanguage);
+
+        // Asignar valores por defecto
+        newUser.setLevel(1);
+        newUser.setExperiencePoints(0L);
+
+        // Asignar rol por defecto
+        newUser.setRole(Role.ROLE_USER);
 
 
-
-
+        return userRepository.save(newUser);
     }
-
 }
