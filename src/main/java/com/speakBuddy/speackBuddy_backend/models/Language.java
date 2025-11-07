@@ -20,4 +20,5 @@ public class Language {
 
     @Column(nullable = false, unique = true, length = 10)
     private String isoCode; // es, en, fr, etc. -> iconos de banderas en flutter
+
 }
