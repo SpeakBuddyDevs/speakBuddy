@@ -28,7 +28,13 @@ public class UserService {
     public User registerUSer(RegisterRequestDTO request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("El email ya está registrado");
+            throw new RuntimeException("El email ya está registrado");
+        }
+
+        String username = request.getName() + " " + request.getSurname();
+
+        if (userRepository.existsByUsername(username)) {
+            throw new RuntimeException("El nombre de usuario ya está en uso");
         }
 
 
