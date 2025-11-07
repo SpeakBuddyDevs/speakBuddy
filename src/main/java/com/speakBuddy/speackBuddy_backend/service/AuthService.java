@@ -22,11 +22,11 @@ public class AuthService {
         if (user != null && BCrypt.checkpw(password, user.getPassword())) {
             userLogged = user;
             log.info("User logged successfully");
-            return true; //El usuario no existe
+            return true;
         }
         else {
             log.info("User not found");
-            return false;
+            return false;//El usuario no existe
         }
     }
 
