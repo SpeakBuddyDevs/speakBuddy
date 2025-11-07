@@ -1,6 +1,8 @@
 package com.speakBuddy.speackBuddy_backend.service;
 
 import com.speakBuddy.speackBuddy_backend.dto.RegisterRequestDTO;
+import com.speakBuddy.speackBuddy_backend.exception.EmailAlreadyExitsException;
+import com.speakBuddy.speackBuddy_backend.exception.ResourceNotFoundException;
 import com.speakBuddy.speackBuddy_backend.models.Language;
 import com.speakBuddy.speackBuddy_backend.models.User;
 import com.speakBuddy.speackBuddy_backend.repository.LanguageRepository;
@@ -29,11 +31,11 @@ public class UserService {
     public User registerUser(RegisterRequestDTO request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("El email ya está registrado");
+            throw new EmailAlreadyExitsException("El email ya está registrado");
         }
 
         Language nativeLanguage = languageRepository.findById(request.getNativeLanguageId())
-                .orElseThrow(() -> new RuntimeException("Idioma nativo no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Idioma nativo no encontrado"));
 
         String publicUsername = request.getName() + " " + request.getSurname();
 
