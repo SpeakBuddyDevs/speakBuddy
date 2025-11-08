@@ -10,5 +10,5 @@ public class LanguageDTO {
 
     private Long id;
     private String name;
-    private String isoCOde;
+    private String isoCode;
 }
