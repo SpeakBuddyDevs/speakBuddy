@@ -39,7 +39,7 @@ public class UserServiceTest {
 
 
     @Test
-    void registerUser() {
+    void registerUser_HappyPath() {
         RegisterRequestDTO dto = new RegisterRequestDTO();
         dto.setEmail("test@gmail.com");
         dto.setPassword("password123");
