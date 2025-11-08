@@ -8,5 +8,5 @@ import lombok.Setter;
 public class LearningLanguageDTO {
 
     private LanguageDTO language;
-    private String levelName;1
+    private String levelName;
 }
