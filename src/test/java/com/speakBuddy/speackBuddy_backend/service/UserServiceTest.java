@@ -3,6 +3,7 @@ package com.speakBuddy.speackBuddy_backend.service;
 import static org.junit.jupiter.api.Assertions.*;
 import com.speakBuddy.speackBuddy_backend.dto.RegisterRequestDTO;
 import com.speakBuddy.speackBuddy_backend.exception.EmailAlreadyExistsException;
+import com.speakBuddy.speackBuddy_backend.exception.ResourceNotFoundException;
 import com.speakBuddy.speackBuddy_backend.models.Language;
 import com.speakBuddy.speackBuddy_backend.models.User;
 import com.speakBuddy.speackBuddy_backend.repository.LanguageRepository;
@@ -99,8 +100,33 @@ public class UserServiceTest {
 
         verify(languageRepository, never()).findById(anyLong());
         verify(userRepository, never()).save(any(User.class));
-
     }
 
+    @Test
+    void refisterUser_LanguageNotFound() {
+        RegisterRequestDTO dto = new RegisterRequestDTO();
+        dto.setEmail("nuevo.usuario@gmail.com");
+        dto.setPassword("password123");
+        dto.setName("Test");
+        dto.setSurname("User");
+        dto.setNativeLanguageId(99L); // Idioma (id) que no existe
+
+        when(userRepository.existsByEmail("nuevo.usuario@gmail.com")).thenReturn(false);
+        when(languageRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(
+                ResourceNotFoundException.class,
+                () -> {
+                    userService.registerUser(dto);
+                },
+                "Se esperaba que se lanzara ResourceNotFoundException"
+        );
+
+        // "Verifica que el metodo save nunca fue llamado."
+        verify(userRepository, never()).save(any(User.class));
+
+        // "Verifica que el metodo save nunca fue llamado."
+        verify(passwordEncoder, never()).encode(anyString());
+    }
 
 }
