@@ -2,6 +2,7 @@ package com.speakBuddy.speackBuddy_backend.service;
 
 import static org.junit.jupiter.api.Assertions.*;
 import com.speakBuddy.speackBuddy_backend.dto.RegisterRequestDTO;
+import com.speakBuddy.speackBuddy_backend.exception.EmailAlreadyExistsException;
 import com.speakBuddy.speackBuddy_backend.models.Language;
 import com.speakBuddy.speackBuddy_backend.models.User;
 import com.speakBuddy.speackBuddy_backend.repository.LanguageRepository;
@@ -76,5 +77,30 @@ public class UserServiceTest {
         verify(userRepository, times(1)).save(any(User.class));
         verify(userRepository, times(1)).existsByEmail("test@gmail.com");
     }
+
+    @Test
+    void registerUser_EmailAlreadyExists() {
+
+        RegisterRequestDTO dto = new RegisterRequestDTO();
+        dto.setEmail("existente@gmail.com");
+        dto.setPassword("password123");
+        dto.setName("Test");
+        dto.setSurname("User");
+        dto.setNativeLanguageId(1L);
+
+        when(userRepository.existsByEmail("existente@gmail.com")).thenReturn(true);
+
+        assertThrows(
+                EmailAlreadyExistsException.class,
+                () -> { userService.registerUser(dto);
+                },
+                "Se esperaba que se lanzara EmailAlreadyExistsException"
+        );
+
+        verify(languageRepository, never()).findById(anyLong());
+        verify(userRepository, never()).save(any(User.class));
+
+    }
+
 
 }
