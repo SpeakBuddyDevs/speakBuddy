@@ -18,9 +18,9 @@ public class LanguageLevel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, unique = true)
     private String name; // "A1 - Beginner", "A2 - Elementary", etc.
 
+    @Column(nullable = false, unique = true)
     private Integer levelOrder;
-
-
 }

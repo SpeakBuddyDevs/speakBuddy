@@ -3,7 +3,10 @@ package com.speakBuddy.speackBuddy_backend.models;
 import com.speakBuddy.speackBuddy_backend.security.Role;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -20,14 +23,27 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String profilePicture;
-    private String name;
-    private String surname;
-    private String username;
-    private String email;
+    @Column(nullable = false, unique = true, length = 254)
+    private String email; // username para spring security
+
+    @Column(nullable = false)
     private String password;
 
-    @ManyToOne
+    @Column(nullable = false)
+    private String name;
+
+    @Column(nullable = false)
+    private String surname;
+
+    @Column(nullable = false)
+    private String username; // nombre de usuario público que verán los demás
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "native_language_id", nullable = false)
     private Language nativeLanguage;
 
     @OneToMany(
@@ -37,5 +53,20 @@ public class User {
     )
     private Set<UserLanguagesLearning> languagesToLearn = new HashSet<>();
 
-    private Role role;
+    @Column(nullable = false)
+    private Integer level = 1;
+
+    @Column(nullable = false)
+    private Long experiencePoints = 0L;
+
+    private String profilePicture;
+
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
+
 }

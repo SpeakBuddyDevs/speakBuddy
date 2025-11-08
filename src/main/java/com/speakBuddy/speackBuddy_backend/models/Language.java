@@ -14,6 +14,11 @@ public class Language {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false, unique = true, length = 100)
     private String name;
+
+    @Column(nullable = false, unique = true, length = 10)
     private String isoCode; // es, en, fr, etc. -> iconos de banderas en flutter
+
 }
