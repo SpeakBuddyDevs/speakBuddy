@@ -3,6 +3,8 @@ package com.speakBuddy.speackBuddy_backend.dto;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Set;
+
 @Getter
 @Setter
 public class ProfileResponseDTO {
@@ -19,6 +21,7 @@ public class ProfileResponseDTO {
     private Integer level;
     private Long experiencePoints;
 
-
-
+    // Campos relacionales (DTOs anidados)
+    private LanguageDTO nativeLanguage;
+    private Set<LearningLanguageDTO> languagesToLearn;
 }
