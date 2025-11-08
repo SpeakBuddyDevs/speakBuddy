@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.speakBuddy</groupId>
-	<artifactId>speackBuddy-backend</artifactId>
+	<artifactId>speakBuddy-backend</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>speackBuddy-backend</name>
 	<description>Backend API for Tandem Language Exchange App</description>
