@@ -1,0 +1,80 @@
+package com.speakBuddy.speackBuddy_backend.service;
+
+import static org.junit.jupiter.api.Assertions.*;
+import com.speakBuddy.speackBuddy_backend.dto.RegisterRequestDTO;
+import com.speakBuddy.speackBuddy_backend.models.Language;
+import com.speakBuddy.speackBuddy_backend.models.User;
+import com.speakBuddy.speackBuddy_backend.repository.LanguageRepository;
+import com.speakBuddy.speackBuddy_backend.repository.UserRepository;
+import com.speakBuddy.speackBuddy_backend.security.Role;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.Optional;
+
+import static org.mockito.Mockito.*;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+public class UserServiceTest {
+
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private LanguageRepository languageRepository;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
+    @InjectMocks
+    private UserService userService;
+
+
+    @Test
+    void registerUser() {
+        RegisterRequestDTO dto = new RegisterRequestDTO();
+        dto.setEmail("test@gmail.com");
+        dto.setPassword("password123");
+        dto.setName("Test");
+        dto.setSurname("User");
+        dto.setNativeLanguageId(1L);
+
+        Language mockLanguage = new Language();
+        mockLanguage.setId(1L);
+        mockLanguage.setName("Español");
+        mockLanguage.setIsoCode("es");
+
+        // Devuelve false cuando alguien llame a userRepository.existsByEmail
+        when(userRepository.existsByEmail("test@gmail.com")).thenReturn(false);
+
+        when(languageRepository.findById(1L)).thenReturn(Optional.of(mockLanguage));
+
+        when(passwordEncoder.encode("password123")).thenReturn("hashed_password_abc");
+
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        User result = userService.registerUser(dto);
+
+
+        // Verifico los resultados
+        assertNotNull(result); // ¿No es nulo?
+        assertEquals("test@gmail.com", result.getEmail()); // ¿El email es correcto?
+        assertEquals("hashed_password_abc", result.getPassword()); // ¿La contraseña se hasheó?
+        assertEquals("Test User", result.getUsername()); // ¿El username se generó bien?
+        assertEquals(Role.ROLE_USER, result.getRole()); // ¿Se asignó el rol por defecto?
+        assertEquals(1, result.getLevel()); // ¿Se asignó el nivel por defecto?
+        assertEquals(mockLanguage, result.getNativeLanguage()); // ¿Se asignó el idioma correcto?
+
+        verify(userRepository, times(1)).save(any(User.class));
+        verify(userRepository, times(1)).existsByEmail("test@gmail.com");
+    }
+
+}
