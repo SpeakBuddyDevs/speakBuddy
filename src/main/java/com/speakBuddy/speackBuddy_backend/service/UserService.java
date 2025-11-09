@@ -10,7 +10,9 @@ import com.speakBuddy.speackBuddy_backend.exception.ResourceNotFoundException;
 import com.speakBuddy.speackBuddy_backend.models.Language;
 import com.speakBuddy.speackBuddy_backend.models.User;
 import com.speakBuddy.speackBuddy_backend.models.UserLanguagesLearning;
+import com.speakBuddy.speackBuddy_backend.repository.LanguageLevelRepository;
 import com.speakBuddy.speackBuddy_backend.repository.LanguageRepository;
+import com.speakBuddy.speackBuddy_backend.repository.UserLanguageLearningRepository;
 import com.speakBuddy.speackBuddy_backend.repository.UserRepository;
 import com.speakBuddy.speackBuddy_backend.security.Role;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,17 +27,25 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final LanguageRepository languageRepository;
+    private final LanguageLevelRepository languageLevelRepository;
+    private final UserLanguageLearningRepository userLanguageLearningRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserService(UserRepository userRepository, LanguageRepository languageRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository,
+                       LanguageRepository languageRepository,
+                       LanguageLevelRepository languageLevelRepository,
+                       UserLanguageLearningRepository userLanguageLearningRepository,
+                       PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.languageRepository = languageRepository;
+        this.languageLevelRepository = languageLevelRepository;
+        this.userLanguageLearningRepository = userLanguageLearningRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
 
-    // Método principal de lógica de HU 1.1
+    // Metodo principal de lógica de HU 1.1
     public User registerUser(RegisterRequestDTO request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
