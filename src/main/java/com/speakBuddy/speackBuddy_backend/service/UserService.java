@@ -131,6 +131,29 @@ public class UserService {
         return mapUserToProfileResponseDTO(updatesdUser);
     }
 
+    // --- Lógica de HU 1.2: Eliminar Idioma de Aprendizaje ---
+    public ProfileResponseDTO deleteLearningLanguage(Long userId, Long learningId) {
+        // 1. Buscar al usuario
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + userId));
+
+        // 2. Buscar la *relación* de aprendizaje específica
+        UserLanguagesLearning learningToRemove = userLanguageLearningRepository.findById(learningId)
+                .orElseThrow(() -> new ResourceNotFoundException("Relación de aprendizaje no encontrada con ID: " + learningId));
+
+        // 3. ¡VALIDACIÓN DE SEGURIDAD CLAVE!
+        if (!learningToRemove.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("Acceso denegado. La relación no pertenece al usuario.");
+        }
+
+        // 4. Eliminar la relación
+        user.getLanguagesToLearn().remove(learningToRemove);
+        User updatedUser = userRepository.save(user);
+
+        // 5. Devolver el perfil actualizado
+        return mapUserToProfileResponseDTO(updatedUser);
+    }
+
     // Métodos auxiliares para mapeo de entidades a DTOs
     private ProfileResponseDTO mapUserToProfileResponseDTO(User user) {
         ProfileResponseDTO dto = new ProfileResponseDTO();
