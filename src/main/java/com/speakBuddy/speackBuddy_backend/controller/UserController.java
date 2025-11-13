@@ -1,5 +1,6 @@
 package com.speakBuddy.speackBuddy_backend.controller;
 
+import com.speakBuddy.speackBuddy_backend.dto.AddLearningLanguageDTO;
 import com.speakBuddy.speackBuddy_backend.dto.ProfileResponseDTO;
 import com.speakBuddy.speackBuddy_backend.dto.ProfileUpdateDTO;
 import com.speakBuddy.speackBuddy_backend.service.UserService;
@@ -33,6 +34,16 @@ public class UserController {
             @RequestBody ProfileUpdateDTO updateDTO
     ) {
         ProfileResponseDTO updatedProfile = userService.updateProfile(id, updateDTO);
+
+        return ResponseEntity.ok(updatedProfile);
+    }
+
+    @PostMapping("/{id}/languages/learn")
+    public ResponseEntity<ProfileResponseDTO> addLanguageToLearn(
+            @PathVariable Long id,
+            @RequestBody AddLearningLanguageDTO addDTO
+    ) {
+        ProfileResponseDTO updatedProfile = userService.addLearningLanguage(id, addDTO);
 
         return ResponseEntity.ok(updatedProfile);
     }
