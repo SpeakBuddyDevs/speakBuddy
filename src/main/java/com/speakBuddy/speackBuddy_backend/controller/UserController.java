@@ -38,12 +38,24 @@ public class UserController {
         return ResponseEntity.ok(updatedProfile);
     }
 
+    // Endpoint 3: Añadir un nuevo idioma que el usuario quiere aprender
     @PostMapping("/{id}/languages/learn")
     public ResponseEntity<ProfileResponseDTO> addLanguageToLearn(
             @PathVariable Long id,
             @RequestBody AddLearningLanguageDTO addDTO
     ) {
         ProfileResponseDTO updatedProfile = userService.addLearningLanguage(id, addDTO);
+
+        return ResponseEntity.ok(updatedProfile);
+    }
+
+    // Endpoint 4: Eliminar un idioma que el usuario está aprendiendo
+    @DeleteMapping("/{id}/languages/learn/{languageId}")
+    public ResponseEntity<ProfileResponseDTO> deleteLearningLanguage(
+            @PathVariable Long id,
+            @PathVariable Long languageId
+    ) {
+        ProfileResponseDTO updatedProfile = userService.deleteLearningLanguage(id, languageId);
 
         return ResponseEntity.ok(updatedProfile);
     }
