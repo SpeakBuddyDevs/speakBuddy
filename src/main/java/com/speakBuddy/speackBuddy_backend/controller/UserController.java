@@ -3,6 +3,7 @@ package com.speakBuddy.speackBuddy_backend.controller;
 import com.speakBuddy.speackBuddy_backend.dto.AddLearningLanguageDTO;
 import com.speakBuddy.speackBuddy_backend.dto.ProfileResponseDTO;
 import com.speakBuddy.speackBuddy_backend.dto.ProfileUpdateDTO;
+import com.speakBuddy.speackBuddy_backend.dto.UpdateNativeLanguageDTO;
 import com.speakBuddy.speackBuddy_backend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -56,6 +57,17 @@ public class UserController {
             @PathVariable Long languageId
     ) {
         ProfileResponseDTO updatedProfile = userService.deleteLearningLanguage(id, languageId);
+
+        return ResponseEntity.ok(updatedProfile);
+    }
+
+    // --- Endpoint 5: Actualizar el Idioma Nativo ---
+    @PutMapping("/{id}/languages/native")
+    public ResponseEntity<ProfileResponseDTO> updateNativeLanguage(
+            @PathVariable Long id,
+            @RequestBody UpdateNativeLanguageDTO dto
+    ) {
+        ProfileResponseDTO updatedProfile = userService.updateNativeLanguage(id, dto);
 
         return ResponseEntity.ok(updatedProfile);
     }
