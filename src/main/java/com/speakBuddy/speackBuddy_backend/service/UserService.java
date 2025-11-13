@@ -154,6 +154,27 @@ public class UserService {
         return mapUserToProfileResponseDTO(updatedUser);
     }
 
+    // --- Lógica de HU 1.2: Actualizar Idioma Nativo ---
+    public ProfileResponseDTO updateNativeLanguage(Long userId, UpdateNativeLanguageDTO dto) {
+
+        // 1. Buscar al usuario
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        // 2. Buscar la entidad del *nuevo* idioma nativo
+        Language newNativeLanguage = languageRepository.findById(dto.getNewNativeLanguageId())
+                .orElseThrow(() -> new ResourceNotFoundException("Language not found"));
+
+        // 3. Realizar la actualización
+        user.setNativeLanguage(newNativeLanguage);
+
+        // 4. Guardar los cambios en la BBDD
+        User updatedUser = userRepository.save(user);
+
+        // 5. Devolver el perfil completo y actualizado (reutilizando nuestro helper)
+        return mapUserToProfileResponseDTO(updatedUser);
+    }
+
     // Métodos auxiliares para mapeo de entidades a DTOs
     private ProfileResponseDTO mapUserToProfileResponseDTO(User user) {
         ProfileResponseDTO dto = new ProfileResponseDTO();
