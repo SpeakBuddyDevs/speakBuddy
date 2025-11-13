@@ -1,9 +1,6 @@
 package com.speakBuddy.speackBuddy_backend.controller;
 
-import com.speakBuddy.speackBuddy_backend.dto.AddLearningLanguageDTO;
-import com.speakBuddy.speackBuddy_backend.dto.ProfileResponseDTO;
-import com.speakBuddy.speackBuddy_backend.dto.ProfileUpdateDTO;
-import com.speakBuddy.speackBuddy_backend.dto.UpdateNativeLanguageDTO;
+import com.speakBuddy.speackBuddy_backend.dto.*;
 import com.speakBuddy.speackBuddy_backend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -68,6 +65,18 @@ public class UserController {
             @RequestBody UpdateNativeLanguageDTO dto
     ) {
         ProfileResponseDTO updatedProfile = userService.updateNativeLanguage(id, dto);
+
+        return ResponseEntity.ok(updatedProfile);
+    }
+
+    // --- Endpoint 6: Actualizar Nivel de Idioma de Aprendizaje ---
+    @PutMapping("/{id}/languages/learn/{learningId}")
+    public ResponseEntity<ProfileResponseDTO> updateLearningLevel(
+            @PathVariable Long id,        // El ID del Usuario
+            @PathVariable Long learningId, // El ID de la *relación* a cambiar
+            @RequestBody UpdateLearningLevelDTO dto
+    ) {
+        ProfileResponseDTO updatedProfile = userService.updateLearningLevel(id, learningId, dto);
 
         return ResponseEntity.ok(updatedProfile);
     }

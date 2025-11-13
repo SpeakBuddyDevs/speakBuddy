@@ -175,6 +175,35 @@ public class UserService {
         return mapUserToProfileResponseDTO(updatedUser);
     }
 
+    // --- Lógica de HU 1.2: Actualizar Nivel de Idioma de Aprendizaje ---
+    public ProfileResponseDTO updateLearningLevel(Long userId, Long learningId, UpdateLearningLevelDTO dto) {
+
+        // 1. Buscar el nuevo nivel al que se quiere actualizar
+        LanguageLevel newLevel = languageLevelRepository.findById(dto.getNewLevelId())
+                .orElseThrow(() -> new ResourceNotFoundException("Nivel de idioma no encontrado con ID: " + dto.getNewLevelId()));
+
+        // 2. Buscar la *relación* de aprendizaje que queremos editar
+        UserLanguagesLearning learningToUpdate = userLanguageLearningRepository.findById(learningId)
+                .orElseThrow(() -> new ResourceNotFoundException("Relación de aprendizaje no encontrada con ID: " + learningId));
+
+        // 3. ¡VALIDACIÓN DE SEGURIDAD CLAVE!
+        if (!learningToUpdate.getUser().getId().equals(userId)) {
+            throw new RuntimeException("Acceso denegado. La relación no pertenece al usuario.");
+        }
+
+        // 4. Realizar la actualización
+        learningToUpdate.setLevel(newLevel);
+
+        // 5. Guardar la entidad de relación actualizada
+        userLanguageLearningRepository.save(learningToUpdate);
+
+        // 6. Devolver el perfil completo y actualizado del usuario
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + userId));
+
+        return mapUserToProfileResponseDTO(user);
+    }
+
     // Métodos auxiliares para mapeo de entidades a DTOs
     private ProfileResponseDTO mapUserToProfileResponseDTO(User user) {
         ProfileResponseDTO dto = new ProfileResponseDTO();
