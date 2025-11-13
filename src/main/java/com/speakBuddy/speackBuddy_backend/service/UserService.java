@@ -1,13 +1,10 @@
 package com.speakBuddy.speackBuddy_backend.service;
 
-import com.speakBuddy.speackBuddy_backend.dto.LanguageDTO;
-import com.speakBuddy.speackBuddy_backend.dto.LearningLanguageDTO;
-import com.speakBuddy.speackBuddy_backend.dto.ProfileResponseDTO;
-import com.speakBuddy.speackBuddy_backend.dto.ProfileUpdateDTO;
-import com.speakBuddy.speackBuddy_backend.dto.RegisterRequestDTO;
+import com.speakBuddy.speackBuddy_backend.dto.*;
 import com.speakBuddy.speackBuddy_backend.exception.EmailAlreadyExistsException;
 import com.speakBuddy.speackBuddy_backend.exception.ResourceNotFoundException;
 import com.speakBuddy.speackBuddy_backend.models.Language;
+import com.speakBuddy.speackBuddy_backend.models.LanguageLevel;
 import com.speakBuddy.speackBuddy_backend.models.User;
 import com.speakBuddy.speackBuddy_backend.models.UserLanguagesLearning;
 import com.speakBuddy.speackBuddy_backend.repository.LanguageLevelRepository;
@@ -103,6 +100,35 @@ public class UserService {
         User updatedUser = userRepository.save(user);
 
         return mapUserToProfileResponseDTO(updatedUser);
+    }
+
+    public ProfileResponseDTO addLearningLanguage(Long userId, AddLearningLanguageDTO addDTO) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Language language = languageRepository.findById(addDTO.getLanguageId())
+                .orElseThrow(() -> new ResourceNotFoundException("Language not found"));
+
+        LanguageLevel level = languageLevelRepository.findById(addDTO.getLevelId())
+                .orElseThrow(() -> new ResourceNotFoundException("Language level not found"));
+
+        boolean alreadyLearning = user.getLanguagesToLearn().stream()
+                .anyMatch(learning -> learning.getLanguage().getId().equals(language.getId()));
+
+        if (alreadyLearning) {
+            throw new IllegalArgumentException("User is already learning this language");
+        }
+
+        UserLanguagesLearning newLearning = new UserLanguagesLearning();
+        newLearning.setUser(user);
+        newLearning.setLanguage(language);
+        newLearning.setLevel(level);
+
+        user.getLanguagesToLearn().add(newLearning);
+        User updatesdUser = userRepository.save(user);
+
+        return mapUserToProfileResponseDTO(updatesdUser);
     }
 
     // Métodos auxiliares para mapeo de entidades a DTOs
