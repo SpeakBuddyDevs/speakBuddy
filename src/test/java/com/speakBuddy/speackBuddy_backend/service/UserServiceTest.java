@@ -129,4 +129,31 @@ public class UserServiceTest {
         verify(passwordEncoder, never()).encode(anyString());
     }
 
+    @Test
+    void deleteUserByEmail_WhenUserExists_ShouldDeleteUser() {
+        String email =  "test@example.com";
+        User mockUser = new User();
+        mockUser.setEmail(email);
+
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(mockUser));
+
+        userService.deleteUserByEmail(email);
+
+        //Verifica que se ha llamado al metodo delete en el usuario correcto
+        verify(userRepository, times(1)).findByEmail(email);
+    }
+
+    @Test
+    void deleteUserByEmail_WhenUserDoesNotExist_ShouldThrowException() {
+        String email = "fantasma@example.com";
+        when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> {
+            userService.deleteUserByEmail(email);
+        });
+
+        //Verificacion de que no se ha llamado al método
+        verify(userRepository, never()).findByEmail(email);
+    }
+
 }
