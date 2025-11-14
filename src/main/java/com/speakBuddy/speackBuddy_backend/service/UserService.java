@@ -61,6 +61,11 @@ public class UserService {
         return userRepository.save(newUser);
     }
 
+    /**
+     * Eliminar el usuario y sus datos
+     * @param email
+     */
+
     public void deleteUserByEmail(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
