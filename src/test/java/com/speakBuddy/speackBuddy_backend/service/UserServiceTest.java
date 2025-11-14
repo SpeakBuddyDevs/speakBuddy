@@ -1,11 +1,16 @@
 package com.speakBuddy.speackBuddy_backend.service;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+import com.speakBuddy.speackBuddy_backend.dto.LearningLanguageDTO;
+import com.speakBuddy.speackBuddy_backend.dto.ProfileResponseDTO;
 import com.speakBuddy.speackBuddy_backend.dto.RegisterRequestDTO;
 import com.speakBuddy.speackBuddy_backend.exception.EmailAlreadyExistsException;
 import com.speakBuddy.speackBuddy_backend.exception.ResourceNotFoundException;
 import com.speakBuddy.speackBuddy_backend.models.Language;
+import com.speakBuddy.speackBuddy_backend.models.LanguageLevel;
 import com.speakBuddy.speackBuddy_backend.models.User;
+import com.speakBuddy.speackBuddy_backend.models.UserLanguagesLearning;
 import com.speakBuddy.speackBuddy_backend.repository.LanguageRepository;
 import com.speakBuddy.speackBuddy_backend.repository.UserRepository;
 import com.speakBuddy.speackBuddy_backend.security.Role;
@@ -17,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
+import java.util.Set;
 
 import static org.mockito.Mockito.*;
 
@@ -127,6 +133,90 @@ public class UserServiceTest {
 
         // "Verifica que el metodo save nunca fue llamado."
         verify(passwordEncoder, never()).encode(anyString());
+    }
+
+    @Test
+    void getProfile_HappyPath_ShouldReturnMappedDTO() {
+
+        // --- 1. ARRANGE (Preparar el escenario) ---
+
+        // 1.1. Creamos todos los datos falsos (mocks) que componen un perfil
+        Language nativeLang = new Language(1L, "Español", "es");
+        Language learnLang = new Language(2L, "Inglés", "en");
+        LanguageLevel learnLevel = new LanguageLevel(3L, "B1 - Intermedio", 3);
+
+        User mockUser = new User();
+        mockUser.setId(1L);
+        mockUser.setEmail("test@user.com");
+        mockUser.setUsername("Test User");
+        mockUser.setName("Test");
+        mockUser.setSurname("User");
+        mockUser.setLevel(1);
+        mockUser.setExperiencePoints(0L);
+        mockUser.setNativeLanguage(nativeLang);
+
+        // 1.2. Creamos la relación de aprendizaje
+        UserLanguagesLearning relation = new UserLanguagesLearning(
+                10L, // ID de la relación
+                mockUser,
+                learnLang,
+                learnLevel
+        );
+        // Añadimos la relación al Set del usuario
+        mockUser.setLanguagesToLearn(Set.of(relation));
+
+        // 1.3. ¡Programamos el Mock!
+        // "CUANDO alguien busque al usuario con ID 1... DEVUELVE nuestro mockUser."
+        when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
+
+
+        // --- 2. ACT (Actuar) ---
+
+        // Llamamos al método real que queremos probar
+        ProfileResponseDTO result = userService.getProfile(1L);
+
+
+        // --- 3. ASSERT (Verificar el resultado) ---
+
+        // 3.1. Verificar los campos principales
+        assertNotNull(result);
+        assertEquals(1L, result.getId());
+        assertEquals("test@user.com", result.getEmail());
+        assertEquals("Test User", result.getUsername());
+
+        // 3.2. ¡Verificar el mapeo de los DTOs anidados! (Lo más importante)
+        assertNotNull(result.getNativeLanguage());
+        assertEquals("Español", result.getNativeLanguage().getName());
+        assertEquals("es", result.getNativeLanguage().getIsoCode());
+
+        // 3.3. Verificar la lista de idiomas a aprender
+        assertNotNull(result.getLanguagesToLearn());
+        assertEquals(1, result.getLanguagesToLearn().size());
+
+        // Sacamos el primer (y único) idioma de la lista para inspeccionarlo
+        LearningLanguageDTO learningDTO = result.getLanguagesToLearn().iterator().next();
+        assertEquals("Inglés", learningDTO.getLanguage().getName());
+        assertEquals("B1 - Intermedio", learningDTO.getLevelName());
+    }
+
+    @Test
+    void getProfile_UserNotFound_ShouldThrowException() {
+
+        // --- 1. ARRANGE (Preparar el escenario) ---
+
+        // "CUANDO alguien busque al usuario con ID 999... DEVUELVE vacío."
+        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+
+        // --- 2. ACT & 3. ASSERT (Actuar y Verificar) ---
+
+        // Esta accion lanzará una excepción...
+        assertThrows(
+                ResourceNotFoundException.class,
+                () -> {
+                    userService.getProfile(999L); // cuando se llame a este método
+                }
+        );
     }
 
 }
