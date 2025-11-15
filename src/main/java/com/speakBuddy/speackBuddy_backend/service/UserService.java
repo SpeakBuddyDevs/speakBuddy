@@ -248,4 +248,16 @@ public class UserService {
         dto.setLevelName(learning.getLevel().getName());
         return dto;
     }
+
+    /**
+     * Eliminar el usuario y sus datos
+     * @param email
+     */
+
+    public void deleteUserByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        userRepository.delete(user);
+    }
 }
