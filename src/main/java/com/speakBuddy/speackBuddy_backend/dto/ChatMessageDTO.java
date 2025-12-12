@@ -8,11 +8,16 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+/**
+ * Esta clase recibe el mensaje, lo procesa
+ * y lo envia al destinatario
+ */
+
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ChatMessage {
+public class ChatMessageDTO {
 
     private String content;
     private String sender;
