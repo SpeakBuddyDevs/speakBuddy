@@ -45,7 +45,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
 
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/users/**").permitAll() // Permiso temporal para probar HU 1.2 sin HU 1.3 implementada
+                        //.requestMatchers("/api/users/**").permitAll() // Permiso temporal para probar HU 1.2 sin HU 1.3 implementada
                         .anyRequest().authenticated()
                 );
 
