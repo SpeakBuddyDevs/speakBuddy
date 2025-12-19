@@ -26,12 +26,24 @@ public class ChatController {
 
     @MessageMapping("/chat")
     public void processMessage(@Payload ChatMessageDTO chatMessage){
-        ChatMessageDTO savedMsg = chatService.saveMessage(chatMessage);
-        messagingTemplate.convertAndSendToUser(
-                savedMsg.getRecipient(),
-                "/queue/messages",
-                savedMsg
-        );
+
+        if (chatMessage.getType() == ChatMessageDTO.MessageType.CHAT){
+            //Solo se guarda en la base de datos si es un mensaje de texto
+            ChatMessageDTO savedMsg = chatService.saveMessage(chatMessage);
+            messagingTemplate.convertAndSendToUser(
+                    savedMsg.getRecipient(),
+                    "/queue/messages",
+                    savedMsg
+            );
+        } else {
+            //Si entra aqui significa que s un mensaje de WEBRTC y se envia directamente al destinatario
+            messagingTemplate.convertAndSendToUser(
+                    chatMessage.getRecipient(),
+                    "/queue/messages",
+                    chatMessage
+            );
+        }
+
     }
 
     @GetMapping("/api/messages/{otherUserEmail}")

@@ -28,6 +28,10 @@ public class ChatMessageDTO {
     public enum MessageType {
         CHAT,
         JOIN,
-        LEAVE
+        LEAVE,
+
+        OFFER,
+        ANSWER,
+        ICE_CANDIDATE  //Datos de conexion
     }
 }
