@@ -218,6 +218,19 @@ public class UserService {
         dto.setLevel(user.getLevel());
         dto.setExperiencePoints(user.getExperiencePoints());
 
+        //Calculo de experiencia necesaria por nivel
+        //La experiencia necesaria para subir de nivel es 100 veces la del nivel actual
+        long threshold = user.getLevel() * 100L;
+        dto.setXpToNextLevel(threshold);
+
+        if (threshold > 0) {
+            double percentage = (double) user.getExperiencePoints() / threshold;
+            //Aseguramos que no pase del 100% del nivel
+            dto.setProgressPercentage(Math.min(percentage, 1.0));
+        } else {
+            dto.setProgressPercentage(0.0);
+        }
+
         // Mapeo del idioma nativo
         if (user.getNativeLanguage() != null) {
             dto.setNativeLanguage(mapLanguageToDTO(user.getNativeLanguage()));
