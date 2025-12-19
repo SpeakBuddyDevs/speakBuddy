@@ -21,6 +21,9 @@ public class ProfileResponseDTO {
     private Integer level;
     private Long experiencePoints;
 
+    private Long xpToNextLevel;
+    private Double progressPercentage;
+
     // Campos relacionales (DTOs anidados)
     private LanguageDTO nativeLanguage;
     private Set<LearningLanguageDTO> languagesToLearn;
