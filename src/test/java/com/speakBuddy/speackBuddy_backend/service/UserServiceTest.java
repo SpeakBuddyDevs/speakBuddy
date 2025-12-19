@@ -152,7 +152,7 @@ public class UserServiceTest {
         mockUser.setName("Test");
         mockUser.setSurname("User");
         mockUser.setLevel(1);
-        mockUser.setExperiencePoints(0L);
+        mockUser.setExperiencePoints(50L);
         mockUser.setNativeLanguage(nativeLang);
 
         // 1.2. Creamos la relación de aprendizaje
@@ -197,6 +197,13 @@ public class UserServiceTest {
         LearningLanguageDTO learningDTO = result.getLanguagesToLearn().iterator().next();
         assertEquals("Inglés", learningDTO.getLanguage().getName());
         assertEquals("B1 - Intermedio", learningDTO.getLevelName());
+
+        // 4.1. Verificar que funcione el calculo de progreso del nivel
+        assertEquals(1,result.getLevel());
+        assertEquals(50,result.getExperiencePoints());
+
+        assertEquals(100L,result.getXpToNextLevel());
+        assertEquals(0.5,result.getProgressPercentage());
     }
 
     @Test
