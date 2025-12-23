@@ -3,6 +3,8 @@ package com.speakBuddy.speackBuddy_backend.controller;
 import com.speakBuddy.speackBuddy_backend.dto.*;
 import com.speakBuddy.speackBuddy_backend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -97,5 +99,17 @@ public class UserController {
         String email = userDetails.getUsername();
         userService.deleteUserByEmail(email);
         return ResponseEntity.noContent().build();
+    }
+
+    // --- HU 2.1: Buscador ---
+    // GET /api/users/search?nativeLang=es&learningLang=en&page=0&size=10
+    @GetMapping("/search")
+    public ResponseEntity<Page<UserSummaryDTO>> searchUsers(
+            @RequestParam(required = false) String nativeLang,
+            @RequestParam(required = false) String learningLang,
+            Pageable pageable
+    ) {
+        Page<UserSummaryDTO> results = userService.searchUsers(nativeLang, learningLang, pageable);
+        return ResponseEntity.ok(results);
     }
 }
