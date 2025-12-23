@@ -130,8 +130,8 @@ public class UserController {
 
         Optional<User> reviewer = userService.getUserByEmail(userDetails.getUsername()); // *Necesitas crear este método helper en UserService si no lo tienes público*
 
-        reviewer.ifPresent(user -> reviewService.createReview(user.getId(), id, reviewDTO));
+        reviewer.ifPresent(user -> reviewService.createOrUpdateReview(user.getId(), id, reviewDTO));
 
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        return ResponseEntity.ok().build();
     }
 }
