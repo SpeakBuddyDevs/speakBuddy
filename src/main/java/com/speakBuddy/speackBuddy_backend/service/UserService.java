@@ -11,11 +11,16 @@ import com.speakBuddy.speackBuddy_backend.repository.LanguageLevelRepository;
 import com.speakBuddy.speackBuddy_backend.repository.LanguageRepository;
 import com.speakBuddy.speackBuddy_backend.repository.UserLanguageLearningRepository;
 import com.speakBuddy.speackBuddy_backend.repository.UserRepository;
+import com.speakBuddy.speackBuddy_backend.repository.specifications.UserSpecification;
 import com.speakBuddy.speackBuddy_backend.security.Role;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -204,6 +209,19 @@ public class UserService {
         return mapUserToProfileResponseDTO(user);
     }
 
+    // --- HU 2.1: Buscador de Usuarios ---
+    public Page<UserSummaryDTO> searchUsers(String nativeLang, String learningLang, Pageable pageable) {
+
+        // 1. Crear la Specification (la "query")
+        Specification<User> spec = UserSpecification.withFilters(nativeLang, learningLang);
+
+        // 2. Ejecutar la búsqueda paginada
+        Page<User> usersPage = userRepository.findAll(spec, pageable);
+
+        // 3. Mapear a DTO ligero
+        return usersPage.map(this::mapUserToSummaryDTO);
+    }
+
     // Métodos auxiliares para mapeo de entidades a DTOs
     private ProfileResponseDTO mapUserToProfileResponseDTO(User user) {
         ProfileResponseDTO dto = new ProfileResponseDTO();
@@ -259,6 +277,31 @@ public class UserService {
         dto.setLanguage(mapLanguageToDTO(learning.getLanguage()));
         // Mapea el nivel dentro de la relación
         dto.setLevelName(learning.getLevel().getName());
+        return dto;
+    }
+
+    private UserSummaryDTO mapUserToSummaryDTO(User user) {
+        UserSummaryDTO dto = new UserSummaryDTO();
+        dto.setId(user.getId());
+        dto.setUsername(user.getUsername()); // O user.getName()
+        dto.setProfilePicture(user.getProfilePicture());
+
+        if (user.getNativeLanguage() != null) {
+            dto.setNativeLanguage(user.getNativeLanguage().getName());
+            dto.setNativeLanguageCode(user.getNativeLanguage().getIsoCode());
+        }
+
+        List<UserSummaryDTO.LearningSummaryDTO> learningList = user.getLanguagesToLearn().stream()
+                .map(l -> {
+                    UserSummaryDTO.LearningSummaryDTO lDto = new UserSummaryDTO.LearningSummaryDTO();
+                    lDto.setLanguageName(l.getLanguage().getName());
+                    lDto.setLanguageCode(l.getLanguage().getIsoCode());
+                    lDto.setLevel(l.getLevel().getName());
+                    return lDto;
+                })
+                .collect(Collectors.toList());
+
+        dto.setLanguagesToLearn(learningList);
         return dto;
     }
 
