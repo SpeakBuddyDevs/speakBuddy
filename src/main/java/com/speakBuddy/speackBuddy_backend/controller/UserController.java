@@ -1,10 +1,13 @@
 package com.speakBuddy.speackBuddy_backend.controller;
 
 import com.speakBuddy.speackBuddy_backend.dto.*;
+import com.speakBuddy.speackBuddy_backend.models.User;
+import com.speakBuddy.speackBuddy_backend.service.ReviewService;
 import com.speakBuddy.speackBuddy_backend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,15 +16,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
+
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
 
     private final UserService userService;
+    private final ReviewService reviewService;
 
     @Autowired
-    public UserController(UserService userService) {
+    public UserController(UserService userService, ReviewService reviewService) {
         this.userService = userService;
+        this.reviewService = reviewService;
     }
 
     // Endpoint 1: Obtener información del usuario
@@ -111,5 +118,20 @@ public class UserController {
     ) {
         Page<UserSummaryDTO> results = userService.searchUsers(nativeLang, learningLang, pageable);
         return ResponseEntity.ok(results);
+    }
+
+    // --- HU 2.4: Crear Valoración ---
+    @PostMapping("/{id}/reviews")
+    public ResponseEntity<Void> addReview(
+            @PathVariable Long id, // El ID del usuario al que valoramos (reviewee)
+            @RequestBody ReviewRequestDTO reviewDTO,
+            @AuthenticationPrincipal UserDetails userDetails // El usuario logueado (reviewer)
+    ) {
+
+        Optional<User> reviewer = userService.getUserByEmail(userDetails.getUsername()); // *Necesitas crear este método helper en UserService si no lo tienes público*
+
+        reviewer.ifPresent(user -> reviewService.createOrUpdateReview(user.getId(), id, reviewDTO));
+
+        return ResponseEntity.ok().build();
     }
 }

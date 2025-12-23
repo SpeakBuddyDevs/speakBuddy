@@ -69,4 +69,10 @@ public class User {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(columnDefinition = "DOUBLE DEFAULT 0.0")
+    private Double averageRating = 0.0;
+
+    @Column(columnDefinition = "INT DEFAULT 0")
+    private Integer totalReviews = 0;
+
 }
