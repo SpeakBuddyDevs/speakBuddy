@@ -306,6 +306,39 @@ public class UserService {
         return dto;
     }
 
+    public UserProfileDTO mapToUserProfileDTO(User user) {
+        // Mapear idiomas aprendiendo
+        List<UserProfileDTO.LearningLanguageDTO> learningDTOs = user.getLanguagesToLearn().stream()
+                .map(l -> UserProfileDTO.LearningLanguageDTO.builder()
+                        .code(l.getLanguage().getIsoCode())
+                        .name(l.getLanguage().getName())
+                        .level(l.getLevel().getName()) // Ej: "A1 - Principiante"
+                        .build())
+                .toList();
+
+        return UserProfileDTO.builder()
+                // Datos Reales
+                .id(user.getId())
+                .name(user.getName() + " " + user.getSurname())
+                .email(user.getEmail())
+                .nativeLanguage(user.getNativeLanguage() != null ? user.getNativeLanguage().getIsoCode() : "ES")
+                .rating(user.getAverageRating())
+                .exchanges(user.getTotalReviews()) // reviews como proxy de intercambios por ahora
+                .learningLanguages(learningDTOs)
+
+                .level(1) // Nivel base
+                .progressPct(0.0)
+                .languagesCount(learningDTOs.size())
+                .hoursTotal(0)
+                .currentStreakDays(0)
+                .bestStreakDays(0)
+                .medals(0)
+                .isPro(false)
+                .avatarUrl(null)
+                .description("¡Hola! Estoy usando SpeakBuddy.") // Descripción por defecto
+                .build();
+    }
+
     /**
      * Eliminar el usuario y sus datos
      * @param email
