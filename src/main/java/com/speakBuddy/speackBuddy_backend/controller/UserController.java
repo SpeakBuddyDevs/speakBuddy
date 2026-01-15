@@ -7,7 +7,6 @@ import com.speakBuddy.speackBuddy_backend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -133,5 +132,17 @@ public class UserController {
         reviewer.ifPresent(user -> reviewService.createOrUpdateReview(user.getId(), id, reviewDTO));
 
         return ResponseEntity.ok().build();
+    }
+
+    // --- HU Extra: Obtener Mi Perfil ---
+    @GetMapping("/me")
+    public ResponseEntity<UserProfileDTO> getMyProfile(@AuthenticationPrincipal UserDetails userDetails) {
+
+        User user = userService.getUserByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        UserProfileDTO response = userService.mapToUserProfileDTO(user);
+
+        return ResponseEntity.ok(response);
     }
 }
