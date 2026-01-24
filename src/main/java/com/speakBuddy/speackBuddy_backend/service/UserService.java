@@ -1,6 +1,7 @@
 package com.speakBuddy.speackBuddy_backend.service;
 
 import com.speakBuddy.speackBuddy_backend.dto.*;
+import com.speakBuddy.speackBuddy_backend.exception.AlreadyLearningLanguageException;
 import com.speakBuddy.speackBuddy_backend.exception.EmailAlreadyExistsException;
 import com.speakBuddy.speackBuddy_backend.exception.ResourceNotFoundException;
 import com.speakBuddy.speackBuddy_backend.models.Language;
@@ -109,6 +110,9 @@ public class UserService {
     }
 
     public ProfileResponseDTO addLearningLanguage(Long userId, AddLearningLanguageDTO addDTO) {
+        if (addDTO.getLanguageId() == null || addDTO.getLevelId() == null) {
+            throw new IllegalArgumentException("languageId and levelId are required");
+        }
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -123,7 +127,7 @@ public class UserService {
                 .anyMatch(learning -> learning.getLanguage().getId().equals(language.getId()));
 
         if (alreadyLearning) {
-            throw new IllegalArgumentException("User is already learning this language");
+            throw new AlreadyLearningLanguageException("User is already learning this language");
         }
 
         UserLanguagesLearning newLearning = new UserLanguagesLearning();
