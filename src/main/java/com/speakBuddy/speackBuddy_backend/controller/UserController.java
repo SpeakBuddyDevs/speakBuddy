@@ -1,9 +1,12 @@
 package com.speakBuddy.speackBuddy_backend.controller;
 
 import com.speakBuddy.speackBuddy_backend.dto.*;
+import com.speakBuddy.speackBuddy_backend.exception.ResourceNotFoundException;
 import com.speakBuddy.speackBuddy_backend.models.User;
+import com.speakBuddy.speackBuddy_backend.models.UserLanguagesLearning;
 import com.speakBuddy.speackBuddy_backend.service.ReviewService;
 import com.speakBuddy.speackBuddy_backend.service.UserService;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,6 +26,7 @@ public class UserController {
 
     private final UserService userService;
     private final ReviewService reviewService;
+
 
     @Autowired
     public UserController(UserService userService, ReviewService reviewService) {
@@ -144,5 +148,24 @@ public class UserController {
         UserProfileDTO response = userService.mapToUserProfileDTO(user);
 
         return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{userId}/languages/{code}/active")
+    public ResponseEntity<Void> setLanguageActive(
+            @PathVariable Long userId,
+            @PathVariable String code
+    ) {
+        userService.setLearningLanguageActive(userId, code);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{userId}/languages/{code}/inactive")
+    public ResponseEntity<Void> setLanguageInactive(
+            @PathVariable Long userId,
+            @PathVariable String code
+    ) {
+        userService.setLearningLanguageInactive(userId, code);
+
+        return ResponseEntity.ok().build();
     }
 }

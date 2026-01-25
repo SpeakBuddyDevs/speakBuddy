@@ -32,5 +32,6 @@ public class UserProfileDTO {
         private String code;  // Código ISO
         private String name;  // Nombre legible
         private String level; // Nivel (A1, B2...)
+        private boolean active;
     }
 }

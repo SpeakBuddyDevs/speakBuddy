@@ -14,6 +14,7 @@ import com.speakBuddy.speackBuddy_backend.repository.UserLanguageLearningReposit
 import com.speakBuddy.speackBuddy_backend.repository.UserRepository;
 import com.speakBuddy.speackBuddy_backend.repository.specifications.UserSpecification;
 import com.speakBuddy.speackBuddy_backend.security.Role;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -277,12 +278,11 @@ public class UserService {
     }
 
     private LearningLanguageDTO mapLearningToDTO(UserLanguagesLearning learning) {
-        LearningLanguageDTO dto = new LearningLanguageDTO();
-        // Mapea el idioma dentro de la relación
-        dto.setLanguage(mapLanguageToDTO(learning.getLanguage()));
-        // Mapea el nivel dentro de la relación
-        dto.setLevelName(learning.getLevel().getName());
-        return dto;
+        return LearningLanguageDTO.builder()
+                .language(mapLanguageToDTO(learning.getLanguage()))
+                .levelName(learning.getLevel().getName())
+                .active(learning.isActive())
+                .build();
     }
 
     private UserSummaryDTO mapUserToSummaryDTO(User user) {
@@ -317,6 +317,7 @@ public class UserService {
                         .code(l.getLanguage().getIsoCode())
                         .name(l.getLanguage().getName())
                         .level(l.getLevel().getName()) // Ej: "A1 - Principiante"
+                        .active(l.isActive())
                         .build())
                 .toList();
 
@@ -340,6 +341,7 @@ public class UserService {
                 .isPro(false)
                 .avatarUrl(null)
                 .description("¡Hola! Estoy usando SpeakBuddy.") // Descripción por defecto
+                .learningLanguages(learningDTOs)
                 .build();
     }
 
@@ -357,5 +359,33 @@ public class UserService {
 
     public Optional<User> getUserByEmail(String email) {
         return userRepository.findByEmail(email);
+    }
+
+    @Transactional
+    public void setLearningLanguageActive(Long userId, String languageCode) {
+        // 1. Primero, ponemos TODOS los idiomas de este usuario en isActive = false
+        userLanguageLearningRepository.deactivateAllForUser(userId);
+
+        // 2. Buscamos el idioma específico que queremos activar
+        // Nota: Convertimos a mayúsculas por si acaso (es -> ES)
+        UserLanguagesLearning target = userLanguageLearningRepository
+                .findByUserIdAndLanguageIsoCode(userId, languageCode.toUpperCase())
+                .orElseThrow(() -> new ResourceNotFoundException("El usuario no está aprendiendo el idioma con código: " + languageCode));
+
+        // 3. Lo activamos
+        target.setActive(true);
+
+        // 4. Guardamos
+        userLanguageLearningRepository.save(target);
+    }
+
+    @Transactional
+    public void setLearningLanguageInactive(Long userId, String languageCode) {
+        UserLanguagesLearning target = userLanguageLearningRepository
+                .findByUserIdAndLanguageIsoCode(userId, languageCode.toUpperCase())
+                .orElseThrow(() -> new ResourceNotFoundException("Idioma no encontrado"));
+
+        target.setActive(false);
+        userLanguageLearningRepository.save(target);
     }
 }
