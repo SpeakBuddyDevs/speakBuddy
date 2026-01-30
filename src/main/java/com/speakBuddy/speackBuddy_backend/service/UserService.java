@@ -372,6 +372,20 @@ public class UserService {
         return userRepository.findByEmail(email);
     }
 
+    /**
+     * Actualizar solo la foto de perfil del usuario.
+     * @param userId ID del usuario
+     * @param imageUrl URL de la nueva imagen
+     */
+    @Transactional
+    public void updateProfilePicture(Long userId, String imageUrl) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        user.setProfilePicture(imageUrl);
+        userRepository.save(user);
+    }
+
     @Transactional
     public void setLearningLanguageActive(Long userId, String languageCode) {
         // 1. Primero, ponemos TODOS los idiomas de este usuario en active = false

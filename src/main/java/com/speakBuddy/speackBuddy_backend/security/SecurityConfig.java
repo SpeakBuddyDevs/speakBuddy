@@ -51,6 +51,9 @@ public class SecurityConfig {
                         //Endpoint WebSocket (El handshake inicial es público, la seguridad va por Interceptor)
                         .requestMatchers("/ws/**").permitAll()
 
+                        // Archivos estáticos (imágenes subidas) - acceso público
+                        .requestMatchers("/uploads/**").permitAll()
+
                         .anyRequest().authenticated()
                 );
 

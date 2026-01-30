@@ -5,6 +5,7 @@ import com.speakBuddy.speackBuddy_backend.exception.ResourceNotFoundException;
 import com.speakBuddy.speackBuddy_backend.models.User;
 import com.speakBuddy.speackBuddy_backend.models.UserLanguagesLearning;
 import com.speakBuddy.speackBuddy_backend.service.ReviewService;
+import com.speakBuddy.speackBuddy_backend.service.StorageService;
 import com.speakBuddy.speackBuddy_backend.service.UserService;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +18,10 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -26,12 +30,14 @@ public class UserController {
 
     private final UserService userService;
     private final ReviewService reviewService;
+    private final StorageService storageService;
 
 
     @Autowired
-    public UserController(UserService userService, ReviewService reviewService) {
+    public UserController(UserService userService, ReviewService reviewService, StorageService storageService) {
         this.userService = userService;
         this.reviewService = reviewService;
+        this.storageService = storageService;
     }
 
     // Endpoint 1: Obtener información del usuario
@@ -188,5 +194,28 @@ public class UserController {
     ) {
         userService.updateLearningLevelByCode(userId, languageCode, dto.getNewLevelId());
         return ResponseEntity.ok().build();
+    }
+
+    // --- Subir foto de perfil ---
+    @PostMapping("/{id}/profile/picture")
+    public ResponseEntity<Map<String, String>> uploadProfilePicture(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file
+    ) {
+        try {
+            // Subir archivo al storage
+            String imageUrl = storageService.upload(file, "avatars");
+
+            // Actualizar URL en el perfil del usuario
+            userService.updateProfilePicture(id, imageUrl);
+
+            return ResponseEntity.ok(Map.of("url", imageUrl));
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Error al subir la imagen: " + e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", e.getMessage()));
+        }
     }
 }
