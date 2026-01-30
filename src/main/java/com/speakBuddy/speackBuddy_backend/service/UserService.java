@@ -399,4 +399,40 @@ public class UserService {
         target.setActive(false);
         userLanguageLearningRepository.save(target);
     }
+
+    // --- Eliminar idioma de aprendizaje por código ---
+    @Transactional
+    public void deleteLearningLanguageByCode(Long userId, String languageCode) {
+        // 1. Buscar al usuario
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + userId));
+
+        // 2. Buscar la relación de aprendizaje por código de idioma
+        UserLanguagesLearning learningToRemove = userLanguageLearningRepository
+                .findByUserIdAndLanguageIsoCode(userId, languageCode.toLowerCase())
+                .orElseThrow(() -> new ResourceNotFoundException("El usuario no está aprendiendo el idioma con código: " + languageCode));
+
+        // 3. Eliminar la relación
+        user.getLanguagesToLearn().remove(learningToRemove);
+        userRepository.save(user);
+    }
+
+    // --- Actualizar nivel de idioma de aprendizaje por código ---
+    @Transactional
+    public void updateLearningLevelByCode(Long userId, String languageCode, Long newLevelId) {
+        // 1. Buscar el nuevo nivel
+        LanguageLevel newLevel = languageLevelRepository.findById(newLevelId)
+                .orElseThrow(() -> new ResourceNotFoundException("Nivel de idioma no encontrado con ID: " + newLevelId));
+
+        // 2. Buscar la relación de aprendizaje por código de idioma
+        UserLanguagesLearning learningToUpdate = userLanguageLearningRepository
+                .findByUserIdAndLanguageIsoCode(userId, languageCode.toLowerCase())
+                .orElseThrow(() -> new ResourceNotFoundException("El usuario no está aprendiendo el idioma con código: " + languageCode));
+
+        // 3. Actualizar el nivel
+        learningToUpdate.setLevel(newLevel);
+
+        // 4. Guardar
+        userLanguageLearningRepository.save(learningToUpdate);
+    }
 }

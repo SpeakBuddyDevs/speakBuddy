@@ -168,4 +168,25 @@ public class UserController {
 
         return ResponseEntity.ok().build();
     }
+
+    // --- Eliminar idioma de aprendizaje por código ---
+    @DeleteMapping("/{userId}/languages/learn/by-code/{languageCode}")
+    public ResponseEntity<Void> deleteLearningLanguageByCode(
+            @PathVariable Long userId,
+            @PathVariable String languageCode
+    ) {
+        userService.deleteLearningLanguageByCode(userId, languageCode);
+        return ResponseEntity.ok().build();
+    }
+
+    // --- Actualizar nivel de idioma por código ---
+    @PutMapping("/{userId}/languages/learn/by-code/{languageCode}")
+    public ResponseEntity<Void> updateLearningLevelByCode(
+            @PathVariable Long userId,
+            @PathVariable String languageCode,
+            @RequestBody UpdateLearningLevelDTO dto
+    ) {
+        userService.updateLearningLevelByCode(userId, languageCode, dto.getNewLevelId());
+        return ResponseEntity.ok().build();
+    }
 }
