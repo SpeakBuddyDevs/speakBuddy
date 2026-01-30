@@ -97,13 +97,24 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        // Actualizar solo los campos permitidos
-        user.setName(updateDTO.getName());
-        user.setSurname(updateDTO.getSurname());
-        user.setProfilePicture(updateDTO.getProfilePictureUrl());
+        // Actualizar solo los campos permitidos (si no son null)
+        if (updateDTO.getName() != null) {
+            user.setName(updateDTO.getName());
+        }
+        if (updateDTO.getSurname() != null) {
+            user.setSurname(updateDTO.getSurname());
+        }
+        if (updateDTO.getProfilePictureUrl() != null) {
+            user.setProfilePicture(updateDTO.getProfilePictureUrl());
+        }
+        if (updateDTO.getDescription() != null) {
+            user.setDescription(updateDTO.getDescription());
+        }
 
-        // Actualizar el nombre de usuario público
-        user.setUsername(updateDTO.getName() + " " + updateDTO.getSurname());
+        // Actualizar el nombre de usuario público solo si se actualizaron name o surname
+        if (updateDTO.getName() != null || updateDTO.getSurname() != null) {
+            user.setUsername(user.getName() + " " + user.getSurname());
+        }
 
         User updatedUser = userRepository.save(user);
 
@@ -340,7 +351,7 @@ public class UserService {
                 .medals(0)
                 .isPro(false)
                 .avatarUrl(null)
-                .description("¡Hola! Estoy usando SpeakBuddy.") // Descripción por defecto
+                .description(user.getDescription() != null ? user.getDescription() : "")
                 .learningLanguages(learningDTOs)
                 .build();
     }
@@ -363,7 +374,7 @@ public class UserService {
 
     @Transactional
     public void setLearningLanguageActive(Long userId, String languageCode) {
-        // 1. Primero, ponemos TODOS los idiomas de este usuario en isActive = false
+        // 1. Primero, ponemos TODOS los idiomas de este usuario en active = false
         userLanguageLearningRepository.deactivateAllForUser(userId);
 
         // 2. Buscamos el idioma específico que queremos activar

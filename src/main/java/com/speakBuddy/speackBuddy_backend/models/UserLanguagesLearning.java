@@ -34,6 +34,6 @@ public class UserLanguagesLearning {
     private LanguageLevel level;
 
     @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
-    private boolean isActive = false;
+    private boolean active = false;
 
 }

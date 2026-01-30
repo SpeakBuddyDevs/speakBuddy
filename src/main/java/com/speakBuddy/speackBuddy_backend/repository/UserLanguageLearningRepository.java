@@ -13,6 +13,6 @@ public interface UserLanguageLearningRepository extends JpaRepository<UserLangua
     Optional<UserLanguagesLearning> findByUserIdAndLanguageIsoCode(@Param("userId") Long userId, @Param("isoCode") String isoCode);
 
     @Modifying
-    @Query("UPDATE UserLanguagesLearning ull SET ull.isActive = false WHERE ull.user.id = :userId")
+    @Query("UPDATE UserLanguagesLearning ull SET ull.active = false WHERE ull.user.id = :userId")
     void deactivateAllForUser(@Param("userId") Long userId);
 }
