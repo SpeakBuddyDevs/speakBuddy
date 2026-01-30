@@ -369,7 +369,7 @@ public class UserService {
         // 2. Buscamos el idioma específico que queremos activar
         // Nota: Convertimos a mayúsculas por si acaso (es -> ES)
         UserLanguagesLearning target = userLanguageLearningRepository
-                .findByUserIdAndLanguageIsoCode(userId, languageCode.toUpperCase())
+                .findByUserIdAndLanguageIsoCode(userId, languageCode.toLowerCase())
                 .orElseThrow(() -> new ResourceNotFoundException("El usuario no está aprendiendo el idioma con código: " + languageCode));
 
         // 3. Lo activamos
@@ -382,7 +382,7 @@ public class UserService {
     @Transactional
     public void setLearningLanguageInactive(Long userId, String languageCode) {
         UserLanguagesLearning target = userLanguageLearningRepository
-                .findByUserIdAndLanguageIsoCode(userId, languageCode.toUpperCase())
+                .findByUserIdAndLanguageIsoCode(userId, languageCode.toLowerCase())
                 .orElseThrow(() -> new ResourceNotFoundException("Idioma no encontrado"));
 
         target.setActive(false);
