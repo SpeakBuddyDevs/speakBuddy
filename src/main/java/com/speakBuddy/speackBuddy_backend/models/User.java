@@ -75,4 +75,10 @@ public class User {
     @Column(columnDefinition = "INT DEFAULT 0")
     private Integer totalReviews = 0;
 
+    @Column(length = 500)
+    private String description;
+
+    @Column(length = 100)
+    private String country;
+
 }

@@ -33,4 +33,7 @@ public class UserLanguagesLearning {
     @JoinColumn(name = "level_id", nullable = false)
     private LanguageLevel level;
 
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private boolean active = false;
+
 }

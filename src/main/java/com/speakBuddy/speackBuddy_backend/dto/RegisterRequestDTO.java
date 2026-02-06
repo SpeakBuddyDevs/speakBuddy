@@ -13,5 +13,7 @@ public class RegisterRequestDTO {
     private String name;
     private String surname;
     private Long nativeLanguageId;
+    private Long learningLanguageId;
+    private String country;
 
 }
