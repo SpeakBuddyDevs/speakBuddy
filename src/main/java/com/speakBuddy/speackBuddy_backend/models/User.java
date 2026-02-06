@@ -78,4 +78,7 @@ public class User {
     @Column(length = 500)
     private String description;
 
+    @Column(length = 100)
+    private String country;
+
 }

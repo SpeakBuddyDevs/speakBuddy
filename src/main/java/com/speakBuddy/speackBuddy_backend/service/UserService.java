@@ -69,6 +69,7 @@ public class UserService {
         newUser.setName(request.getName());
         newUser.setSurname(request.getSurname());
         newUser.setUsername(publicUsername);
+        newUser.setCountry(request.getCountry() != null ? request.getCountry().trim() : null);
 
         // Asignar la entidad relacionada de Language
         newUser.setNativeLanguage(nativeLanguage);
@@ -80,6 +81,20 @@ public class UserService {
         // Asignar rol por defecto
         newUser.setRole(Role.ROLE_USER);
 
+        // Añadir idioma de aprendizaje si se especificó
+        if (request.getLearningLanguageId() != null && request.getLearningLanguageId() > 0) {
+            Language learningLanguage = languageRepository.findById(request.getLearningLanguageId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Idioma de aprendizaje no encontrado"));
+            LanguageLevel defaultLevel = languageLevelRepository.findById(1L)
+                    .orElseThrow(() -> new ResourceNotFoundException("Nivel de idioma no encontrado"));
+
+            UserLanguagesLearning learning = new UserLanguagesLearning();
+            learning.setUser(newUser);
+            learning.setLanguage(learningLanguage);
+            learning.setLevel(defaultLevel);
+            learning.setActive(true); // Primer idioma añadido en registro → activo por defecto
+            newUser.getLanguagesToLearn().add(learning);
+        }
 
         return userRepository.save(newUser);
     }
@@ -227,10 +242,10 @@ public class UserService {
     }
 
     // --- HU 2.1: Buscador de Usuarios ---
-    public Page<UserSummaryDTO> searchUsers(String nativeLang, String learningLang, Pageable pageable) {
+    public Page<UserSummaryDTO> searchUsers(String query, String nativeLang, String learningLang, String country, Boolean proOnly, Double minRating, Pageable pageable) {
 
         // 1. Crear la Specification (la "query")
-        Specification<User> spec = UserSpecification.withFilters(nativeLang, learningLang);
+        Specification<User> spec = UserSpecification.withFilters(query, nativeLang, learningLang, country, proOnly, minRating);
 
         // 2. Ejecutar la búsqueda paginada
         Page<User> usersPage = userRepository.findAll(spec, pageable);
@@ -299,8 +314,9 @@ public class UserService {
     private UserSummaryDTO mapUserToSummaryDTO(User user) {
         UserSummaryDTO dto = new UserSummaryDTO();
         dto.setId(user.getId());
-        dto.setUsername(user.getUsername()); // O user.getName()
+        dto.setUsername(user.getUsername());
         dto.setProfilePicture(user.getProfilePicture());
+        dto.setCountry(user.getCountry());
 
         if (user.getNativeLanguage() != null) {
             dto.setNativeLanguage(user.getNativeLanguage().getName());
@@ -318,6 +334,10 @@ public class UserService {
                 .collect(Collectors.toList());
 
         dto.setLanguagesToLearn(learningList);
+        dto.setIsPro(user.getRole() != null && user.getRole() == Role.ROLE_PREMIUM);
+        dto.setLevel(user.getLevel() != null ? user.getLevel() : 1);
+        dto.setAverageRating(user.getAverageRating() != null ? user.getAverageRating() : 0.0);
+        dto.setTotalReviews(user.getTotalReviews() != null ? user.getTotalReviews() : 0);
         return dto;
     }
 
@@ -337,6 +357,7 @@ public class UserService {
                 .id(user.getId())
                 .name(user.getName() + " " + user.getSurname())
                 .email(user.getEmail())
+                .country(user.getCountry() != null ? user.getCountry() : "")
                 .nativeLanguage(user.getNativeLanguage() != null ? user.getNativeLanguage().getIsoCode() : "ES")
                 .rating(user.getAverageRating())
                 .exchanges(user.getTotalReviews()) // reviews como proxy de intercambios por ahora

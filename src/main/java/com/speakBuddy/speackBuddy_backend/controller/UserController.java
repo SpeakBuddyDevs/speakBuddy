@@ -118,14 +118,18 @@ public class UserController {
     }
 
     // --- HU 2.1: Buscador ---
-    // GET /api/users/search?nativeLang=es&learningLang=en&page=0&size=10
+    // GET /api/users/search?q=&nativeLang=es&learningLang=en&country=&proOnly=&minRating=&page=0&size=10
     @GetMapping("/search")
     public ResponseEntity<Page<UserSummaryDTO>> searchUsers(
+            @RequestParam(required = false) String q,
             @RequestParam(required = false) String nativeLang,
             @RequestParam(required = false) String learningLang,
+            @RequestParam(required = false) String country,
+            @RequestParam(required = false) Boolean proOnly,
+            @RequestParam(required = false) Double minRating,
             Pageable pageable
     ) {
-        Page<UserSummaryDTO> results = userService.searchUsers(nativeLang, learningLang, pageable);
+        Page<UserSummaryDTO> results = userService.searchUsers(q, nativeLang, learningLang, country, proOnly, minRating, pageable);
         return ResponseEntity.ok(results);
     }
 
