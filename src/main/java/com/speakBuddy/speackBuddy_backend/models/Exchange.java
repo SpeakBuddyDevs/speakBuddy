@@ -36,6 +36,29 @@ public class Exchange {
     @Column(length = 200)
     private String title;
 
+    /** true si el intercambio aparece en el catálogo público; false para intercambios privados */
+    @Column(name = "is_public", nullable = false)
+    private Boolean isPublic = false;
+
+    /** Máximo de participantes (null = sin límite, típico en intercambios privados) */
+    @Column(name = "max_participants")
+    private Integer maxParticipants;
+
+    @Column(length = 2000)
+    private String description;
+
+    /** Código ISO del idioma nativo que el creador ofrece (ej: ES, EN) */
+    @Column(name = "native_language_code", length = 10)
+    private String nativeLanguageCode;
+
+    /** Código ISO del idioma que el creador quiere practicar (ej: EN, FR) */
+    @Column(name = "target_language_code", length = 10)
+    private String targetLanguageCode;
+
+    /** Nivel requerido: Principiante, Intermedio, Avanzado */
+    @Column(name = "required_level", length = 50)
+    private String requiredLevel;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
