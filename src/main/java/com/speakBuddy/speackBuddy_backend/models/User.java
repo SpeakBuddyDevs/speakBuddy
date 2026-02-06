@@ -75,6 +75,9 @@ public class User {
     @Column(columnDefinition = "INT DEFAULT 0")
     private Integer totalReviews = 0;
 
+    @Column(name = "completed_exchanges", columnDefinition = "INT DEFAULT 0")
+    private Integer completedExchanges = 0;
+
     @Column(length = 500)
     private String description;
 

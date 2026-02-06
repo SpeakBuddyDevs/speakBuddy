@@ -338,6 +338,7 @@ public class UserService {
         dto.setLevel(user.getLevel() != null ? user.getLevel() : 1);
         dto.setAverageRating(user.getAverageRating() != null ? user.getAverageRating() : 0.0);
         dto.setTotalReviews(user.getTotalReviews() != null ? user.getTotalReviews() : 0);
+        dto.setExchanges(user.getCompletedExchanges() != null ? user.getCompletedExchanges() : 0);
         return dto;
     }
 
@@ -360,7 +361,7 @@ public class UserService {
                 .country(user.getCountry() != null ? user.getCountry() : "")
                 .nativeLanguage(user.getNativeLanguage() != null ? user.getNativeLanguage().getIsoCode() : "ES")
                 .rating(user.getAverageRating())
-                .exchanges(user.getTotalReviews()) // reviews como proxy de intercambios por ahora
+                .exchanges(user.getCompletedExchanges() != null ? user.getCompletedExchanges() : 0)
                 .learningLanguages(learningDTOs)
 
                 .level(1) // Nivel base
