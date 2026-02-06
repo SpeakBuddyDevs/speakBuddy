@@ -134,4 +134,13 @@ public class UserController {
 
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/{id}/reviews")
+    public ResponseEntity<Page<ReviewResponseDTO>> getUserReviews(
+            @PathVariable Long id,
+            Pageable pageable
+    ) {
+        Page<ReviewResponseDTO> reviews = reviewService.getReviewsForUser(id, pageable);
+        return ResponseEntity.ok(reviews);
+    }
 }

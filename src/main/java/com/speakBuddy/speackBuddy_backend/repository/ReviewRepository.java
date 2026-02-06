@@ -2,6 +2,8 @@ package com.speakBuddy.speackBuddy_backend.repository;
 
 import com.speakBuddy.speackBuddy_backend.models.Review;
 import com.speakBuddy.speackBuddy_backend.models.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,4 +14,5 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
 
     Optional<Review> findByReviewerAndReviewee(User reviewer, User reviewee);
+    Page<Review> findByRevieweeId(Long revieweeId, Pageable pageable);
 }

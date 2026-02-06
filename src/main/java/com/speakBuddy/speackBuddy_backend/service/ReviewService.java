@@ -1,11 +1,14 @@
 package com.speakBuddy.speackBuddy_backend.service;
 
 import com.speakBuddy.speackBuddy_backend.dto.ReviewRequestDTO;
+import com.speakBuddy.speackBuddy_backend.dto.ReviewResponseDTO;
 import com.speakBuddy.speackBuddy_backend.exception.ResourceNotFoundException;
 import com.speakBuddy.speackBuddy_backend.models.Review;
 import com.speakBuddy.speackBuddy_backend.models.User;
 import com.speakBuddy.speackBuddy_backend.repository.ReviewRepository;
 import com.speakBuddy.speackBuddy_backend.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -98,5 +101,34 @@ public class ReviewService {
 
     private Double round(Double value) {
         return Math.round(value * 100.0) / 100.0;
+    }
+
+
+    public Page<ReviewResponseDTO> getReviewsForUser(Long userId, Pageable pageable) {
+
+        if (!userRepository.existsById(userId)) {
+        throw new ResourceNotFoundException("User not found with id: " +userId);
+        }
+
+        Page<Review> reviews = reviewRepository.findByRevieweeId(userId, pageable);
+
+        return reviews.map(this::mapToResponseDTO);
+
+    }
+
+    private ReviewResponseDTO mapToResponseDTO(Review review) {
+        ReviewResponseDTO dto = new ReviewResponseDTO();
+        dto.setId(review.getId());
+        dto.setScore(review.getScore());
+        dto.setComment(review.getComment());
+        dto.setTimestamp(review.getTimestamp());
+
+        if (review.getReviewer() != null) {
+            dto.setReviewerId(review.getReviewer().getId());
+            dto.setReviewerName(review.getReviewer().getUsername());
+            dto.setReviewerPhotoUrl(review.getReviewer().getProfilePicture());
+        }
+
+        return dto;
     }
 }
