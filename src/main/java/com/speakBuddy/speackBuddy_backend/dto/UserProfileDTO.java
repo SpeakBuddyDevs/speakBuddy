@@ -19,7 +19,8 @@ public class UserProfileDTO {
     private Integer level;
     private Double progressPct;
     private Integer languagesCount;
-    private Integer hoursTotal;
+    /** Horas totales de intercambios (calculado desde totalExchangeMinutes / 60.0). */
+    private Double hoursTotal;
     private Integer currentStreakDays;
     private Integer bestStreakDays;
     private Integer medals;

@@ -54,6 +54,9 @@ public class SecurityConfig {
                         // Archivos estáticos (imágenes subidas) - acceso público
                         .requestMatchers("/uploads/**").permitAll()
 
+                        // Catálogo de intercambios públicos - acceso público (auth opcional para isEligible)
+                        .requestMatchers("/api/exchanges/public").permitAll()
+
                         .anyRequest().authenticated()
                 );
 

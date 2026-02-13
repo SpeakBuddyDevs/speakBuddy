@@ -15,6 +15,7 @@ public class UserSummaryDTO {
     private Integer level;
     private Double averageRating;
     private Integer totalReviews;
+    private Integer exchanges;
 
     private List<LearningSummaryDTO> languagesToLearn;
 
