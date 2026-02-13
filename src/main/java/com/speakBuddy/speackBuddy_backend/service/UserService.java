@@ -373,7 +373,7 @@ public class UserService {
                 .currentStreakDays(0)
                 .bestStreakDays(0)
                 .medals(0)
-                .isPro(false)
+                .isPro(user.getRole() != null && user.getRole() == Role.ROLE_PREMIUM)
                 .avatarUrl(null)
                 .description(user.getDescription() != null ? user.getDescription() : "")
                 .learningLanguages(learningDTOs)
