@@ -45,7 +45,23 @@ public class CreateExchangeRequestDTO {
     @Size(max = 10)
     private String targetLanguageCode;
 
-    /** Nivel requerido: Principiante, Intermedio, Avanzado. Requerido si isPublic=true */
+    /** Nivel requerido (legacy). Opcional si se envían requiredLevelMinOrder y requiredLevelMaxOrder. */
     @Size(max = 50)
     private String requiredLevel;
+
+    /** Nivel mínimo del rango CEFR (level_order 1-6: A1=1, A2=2, B1=3, B2=4, C1=5, C2=6). Requerido si isPublic=true. */
+    @Min(1)
+    @Max(6)
+    private Integer requiredLevelMinOrder;
+
+    /** Nivel máximo del rango CEFR (level_order 1-6). Debe ser >= requiredLevelMinOrder. Requerido si isPublic=true. */
+    @Min(1)
+    @Max(6)
+    private Integer requiredLevelMaxOrder;
+
+    /** Temas de conversación opcionales (ej: Música, viajes, practicar entrevista) */
+    private List<String> topics;
+
+    /** Plataformas de videollamada (nombres estándar o texto libre de "Otra"). Al menos una si isPublic=true. */
+    private List<String> platforms;
 }

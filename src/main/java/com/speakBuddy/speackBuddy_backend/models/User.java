@@ -78,6 +78,10 @@ public class User {
     @Column(name = "completed_exchanges", columnDefinition = "INT DEFAULT 0")
     private Integer completedExchanges = 0;
 
+    /** Minutos totales de intercambios completados (se suma durationMinutes al confirmar todos). */
+    @Column(name = "total_exchange_minutes", columnDefinition = "INT DEFAULT 0")
+    private Integer totalExchangeMinutes = 0;
+
     @Column(length = 500)
     private String description;
 

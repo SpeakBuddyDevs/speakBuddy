@@ -16,6 +16,7 @@ public class ExchangeSpecification {
     public static Specification<Exchange> publicExchangesWithFilters(
             String q,
             String requiredLevel,
+            Integer requiredLevelOrder,
             LocalDateTime minDate,
             Integer maxDuration,
             String nativeLang,
@@ -55,8 +56,16 @@ public class ExchangeSpecification {
                         criteriaBuilder.or(titleMatch, descMatch));
             }
 
-            // Nivel requerido
-            if (StringUtils.hasText(requiredLevel)) {
+            // Nivel: por rango (level_order 1-6) o por string legacy
+            if (requiredLevelOrder != null && requiredLevelOrder >= 1 && requiredLevelOrder <= 6) {
+                Predicate minOk = criteriaBuilder.or(
+                        criteriaBuilder.isNull(root.get("requiredLevelMinOrder")),
+                        criteriaBuilder.lessThanOrEqualTo(root.get("requiredLevelMinOrder"), requiredLevelOrder));
+                Predicate maxOk = criteriaBuilder.or(
+                        criteriaBuilder.isNull(root.get("requiredLevelMaxOrder")),
+                        criteriaBuilder.greaterThanOrEqualTo(root.get("requiredLevelMaxOrder"), requiredLevelOrder));
+                predicate = criteriaBuilder.and(predicate, minOk, maxOk);
+            } else if (StringUtils.hasText(requiredLevel)) {
                 predicate = criteriaBuilder.and(predicate,
                         criteriaBuilder.equal(root.get("requiredLevel"), requiredLevel.trim()));
             }

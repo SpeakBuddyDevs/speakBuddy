@@ -28,4 +28,10 @@ public class ExchangeResponseDTO {
      * true si todos han confirmado y el intercambio está completado
      */
     private boolean allConfirmed;
+
+    /**
+     * Fecha del último mensaje del chat del intercambio (null si no hay mensajes).
+     * El cliente lo usa para mostrar indicador "mensajes nuevos".
+     */
+    private LocalDateTime lastMessageAt;
 }

@@ -1,10 +1,13 @@
 package com.speakBuddy.speackBuddy_backend.controller;
 
 import com.speakBuddy.speackBuddy_backend.dto.CreateExchangeRequestDTO;
+import com.speakBuddy.speackBuddy_backend.dto.ExchangeChatMessageResponseDTO;
 import com.speakBuddy.speackBuddy_backend.dto.ExchangeResponseDTO;
 import com.speakBuddy.speackBuddy_backend.dto.PublicExchangeResponseDTO;
+import com.speakBuddy.speackBuddy_backend.dto.SendExchangeMessageRequest;
 import com.speakBuddy.speackBuddy_backend.exception.ResourceNotFoundException;
 import com.speakBuddy.speackBuddy_backend.models.User;
+import com.speakBuddy.speackBuddy_backend.service.ExchangeChatService;
 import com.speakBuddy.speackBuddy_backend.service.ExchangeService;
 import com.speakBuddy.speackBuddy_backend.service.UserService;
 import jakarta.validation.Valid;
@@ -26,10 +29,12 @@ public class ExchangeController {
 
     private final ExchangeService exchangeService;
     private final UserService userService;
+    private final ExchangeChatService exchangeChatService;
 
-    public ExchangeController(ExchangeService exchangeService, UserService userService) {
+    public ExchangeController(ExchangeService exchangeService, UserService userService, ExchangeChatService exchangeChatService) {
         this.exchangeService = exchangeService;
         this.userService = userService;
+        this.exchangeChatService = exchangeChatService;
     }
 
     private Long getCurrentUserId(UserDetails userDetails) {
@@ -61,6 +66,7 @@ public class ExchangeController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(required = false) String requiredLevel,
+            @RequestParam(required = false) Integer requiredLevelOrder,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate minDate,
             @RequestParam(required = false) Integer maxDuration,
             @RequestParam(required = false) String nativeLang,
@@ -68,7 +74,7 @@ public class ExchangeController {
         Long userId = userDetails != null ? getCurrentUserIdOrNull(userDetails) : null;
         LocalDateTime minDateAsDateTime = minDate != null ? minDate.atStartOfDay() : null;
         Page<PublicExchangeResponseDTO> result = exchangeService.searchPublicExchanges(
-                userId, q, page, pageSize, requiredLevel, minDateAsDateTime, maxDuration, nativeLang, targetLang);
+                userId, q, page, pageSize, requiredLevel, requiredLevelOrder, minDateAsDateTime, maxDuration, nativeLang, targetLang);
         return ResponseEntity.ok(result);
     }
 
@@ -114,5 +120,24 @@ public class ExchangeController {
         Long userId = getCurrentUserId(userDetails);
         ExchangeResponseDTO updated = exchangeService.confirm(id, userId);
         return ResponseEntity.ok(updated);
+    }
+
+    @GetMapping("/{id}/messages")
+    public ResponseEntity<List<ExchangeChatMessageResponseDTO>> getExchangeMessages(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id) {
+        Long userId = getCurrentUserId(userDetails);
+        List<ExchangeChatMessageResponseDTO> messages = exchangeChatService.getMessages(id, userId);
+        return ResponseEntity.ok(messages);
+    }
+
+    @PostMapping("/{id}/messages")
+    public ResponseEntity<ExchangeChatMessageResponseDTO> sendExchangeMessage(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id,
+            @Valid @RequestBody SendExchangeMessageRequest request) {
+        Long userId = getCurrentUserId(userDetails);
+        ExchangeChatMessageResponseDTO created = exchangeChatService.sendMessage(id, userId, request);
+        return ResponseEntity.ok(created);
     }
 }

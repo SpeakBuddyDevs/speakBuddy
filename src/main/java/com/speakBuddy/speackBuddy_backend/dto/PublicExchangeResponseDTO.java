@@ -25,8 +25,13 @@ public class PublicExchangeResponseDTO {
     /** Si el creador tiene suscripción PRO */
     private Boolean creatorIsPro;
 
+    /** Etiqueta del rango de nivel (ej. "B1 - Intermedio – C1 - Avanzado") */
     private String requiredLevel;
-    /** Nivel numérico mínimo (1-10) para el idioma objetivo */
+    /** Nivel mínimo del rango (level_order 1-6) */
+    private Integer requiredLevelMinOrder;
+    /** Nivel máximo del rango (level_order 1-6) */
+    private Integer requiredLevelMaxOrder;
+    /** Nivel numérico mínimo (compatibilidad) */
     private Integer minLevel;
 
     private LocalDateTime scheduledAt;
@@ -41,6 +46,8 @@ public class PublicExchangeResponseDTO {
     private String targetLanguage;
 
     private List<String> topics;
+    /** Plataformas de videollamada propuestas (Zoom, Google Meet, etc.) */
+    private List<String> platforms;
 
     /** Si el usuario actual cumple los requisitos para unirse */
     private Boolean isEligible;

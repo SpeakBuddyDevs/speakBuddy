@@ -367,7 +367,9 @@ public class UserService {
                 .level(1) // Nivel base
                 .progressPct(0.0)
                 .languagesCount(learningDTOs.size())
-                .hoursTotal(0)
+                .hoursTotal(user.getTotalExchangeMinutes() != null
+                        ? user.getTotalExchangeMinutes() / 60.0
+                        : 0.0)
                 .currentStreakDays(0)
                 .bestStreakDays(0)
                 .medals(0)
