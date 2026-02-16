@@ -2,6 +2,7 @@ package com.speakBuddy.speackBuddy_backend.repository;
 
 import com.speakBuddy.speackBuddy_backend.models.Exchange;
 import com.speakBuddy.speackBuddy_backend.models.ExchangeParticipant;
+import com.speakBuddy.speackBuddy_backend.models.ExchangeStatus;
 import com.speakBuddy.speackBuddy_backend.models.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -17,4 +18,10 @@ public interface ExchangeParticipantRepository extends JpaRepository<ExchangePar
     Optional<ExchangeParticipant> findByExchangeAndUser(Exchange exchange, User user);
 
     boolean existsByExchangeAndUser(Exchange exchange, User user);
+
+    /**
+     * Participaciones confirmadas del usuario en intercambios con un estado concreto.
+     * Se utiliza para calcular estadísticas de intercambios completados.
+     */
+    List<ExchangeParticipant> findByUserAndConfirmedIsTrueAndExchange_Status(User user, ExchangeStatus status);
 }
