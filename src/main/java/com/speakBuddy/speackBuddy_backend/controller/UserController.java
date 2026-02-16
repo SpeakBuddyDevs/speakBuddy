@@ -6,6 +6,7 @@ import com.speakBuddy.speackBuddy_backend.models.User;
 import com.speakBuddy.speackBuddy_backend.models.UserLanguagesLearning;
 import com.speakBuddy.speackBuddy_backend.service.ReviewService;
 import com.speakBuddy.speackBuddy_backend.service.StorageService;
+import com.speakBuddy.speackBuddy_backend.service.StatsService;
 import com.speakBuddy.speackBuddy_backend.service.UserService;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,13 +32,15 @@ public class UserController {
     private final UserService userService;
     private final ReviewService reviewService;
     private final StorageService storageService;
+    private final StatsService statsService;
 
 
     @Autowired
-    public UserController(UserService userService, ReviewService reviewService, StorageService storageService) {
+    public UserController(UserService userService, ReviewService reviewService, StorageService storageService, StatsService statsService) {
         this.userService = userService;
         this.reviewService = reviewService;
         this.storageService = storageService;
+        this.statsService = statsService;
     }
 
     // Endpoint 1: Obtener información del usuario
@@ -158,6 +161,20 @@ public class UserController {
         UserProfileDTO response = userService.mapToUserProfileDTO(user);
 
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Estadísticas del usuario autenticado para la pantalla Home.
+     *
+     * GET /api/users/me/stats
+     */
+    @GetMapping("/me/stats")
+    public ResponseEntity<UserStatsDTO> getMyStats(@AuthenticationPrincipal UserDetails userDetails) {
+        User user = userService.getUserByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        UserStatsDTO stats = statsService.getUserStats(user);
+        return ResponseEntity.ok(stats);
     }
 
     @PatchMapping("/{userId}/languages/{code}/active")
