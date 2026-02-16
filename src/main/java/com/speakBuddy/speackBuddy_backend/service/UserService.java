@@ -267,6 +267,11 @@ public class UserService {
         dto.setProfilePictureURL(user.getProfilePicture());
         dto.setLevel(user.getLevel());
         dto.setExperiencePoints(user.getExperiencePoints());
+        dto.setCountry(user.getCountry());
+        dto.setDescription(user.getDescription());
+        dto.setAverageRating(user.getAverageRating() != null ? user.getAverageRating() : 0.0);
+        dto.setCompletedExchanges(user.getCompletedExchanges() != null ? user.getCompletedExchanges() : 0);
+        dto.setIsPro(user.getRole() != null && user.getRole() == Role.ROLE_PREMIUM);
 
         //Calculo de experiencia necesaria por nivel
         //La experiencia necesaria para subir de nivel es 100 veces la del nivel actual

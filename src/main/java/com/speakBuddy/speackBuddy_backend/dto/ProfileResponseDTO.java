@@ -24,6 +24,13 @@ public class ProfileResponseDTO {
     private Long xpToNextLevel;
     private Double progressPercentage;
 
+    // Perfil público: país, descripción, valoración e intercambios
+    private String country;
+    private String description;
+    private Double averageRating;
+    private Integer completedExchanges;
+    private Boolean isPro;
+
     // Campos relacionales (DTOs anidados)
     private LanguageDTO nativeLanguage;
     private Set<LearningLanguageDTO> languagesToLearn;
