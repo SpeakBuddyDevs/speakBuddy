@@ -5,6 +5,7 @@ import com.speakBuddy.speackBuddy_backend.dto.SendExchangeMessageRequest;
 import com.speakBuddy.speackBuddy_backend.exception.ResourceNotFoundException;
 import com.speakBuddy.speackBuddy_backend.models.Exchange;
 import com.speakBuddy.speackBuddy_backend.models.ExchangeChatMessage;
+import com.speakBuddy.speackBuddy_backend.models.ExchangeParticipant;
 import com.speakBuddy.speackBuddy_backend.models.User;
 import com.speakBuddy.speackBuddy_backend.repository.ExchangeChatMessageRepository;
 import com.speakBuddy.speackBuddy_backend.repository.ExchangeParticipantRepository;
@@ -25,15 +26,18 @@ public class ExchangeChatService {
     private final ExchangeParticipantRepository participantRepository;
     private final ExchangeChatMessageRepository messageRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public ExchangeChatService(ExchangeRepository exchangeRepository,
                                ExchangeParticipantRepository participantRepository,
                                ExchangeChatMessageRepository messageRepository,
-                               UserRepository userRepository) {
+                               UserRepository userRepository,
+                               NotificationService notificationService) {
         this.exchangeRepository = exchangeRepository;
         this.participantRepository = participantRepository;
         this.messageRepository = messageRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     /**
@@ -90,6 +94,18 @@ public class ExchangeChatService {
                 .content(request.getContent().trim())
                 .build();
         message = messageRepository.save(message);
+
+        // Crear notificación para el resto de participantes (excluyendo al emisor)
+        String senderName = sender.getName() + " " + sender.getSurname();
+        String messagePreview = request.getContent().trim();
+        for (ExchangeParticipant p : participantRepository.findByExchange(exchange)) {
+            User recipient = p.getUser();
+            if (!recipient.getId().equals(sender.getId())) {
+                notificationService.createExchangeMessageNotification(
+                        recipient, exchangeId, senderName, messagePreview);
+            }
+        }
+
         return toDto(message);
     }
 

@@ -1,6 +1,6 @@
 package com.speakBuddy.speackBuddy_backend.service;
 
-import com.speakBuddy.speackBuddy_backend.dto.ChatMessageDTO;
+import com.speakBuddy.speackBuddy_backend.dto.*;
 import com.speakBuddy.speackBuddy_backend.exception.ResourceNotFoundException;
 import com.speakBuddy.speackBuddy_backend.models.ChatMessage;
 import com.speakBuddy.speackBuddy_backend.models.User;
@@ -17,10 +17,14 @@ public class ChatService {
 
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
-    public ChatService(ChatMessageRepository chatMessageRepository, UserRepository userRepository) {
+    public ChatService(ChatMessageRepository chatMessageRepository,
+                       UserRepository userRepository,
+                       NotificationService notificationService) {
         this.chatMessageRepository = chatMessageRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     /**
@@ -70,5 +74,82 @@ public class ChatService {
                         msg.getTimestamp()
                 ))
                 .collect(Collectors.toList());
+    }
+
+    // --- Chat 1:1 por userId (para Flutter) ---
+
+    /**
+     * Genera el chatId determinista para dos usuarios.
+     * Formato: chat_{minUserId}_{maxUserId}
+     */
+    public String getOrCreateChatId(Long myUserId, Long otherUserId) {
+        User me = userRepository.findById(myUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado: " + myUserId));
+        User other = userRepository.findById(otherUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado: " + otherUserId));
+
+        long min = Math.min(myUserId, otherUserId);
+        long max = Math.max(myUserId, otherUserId);
+        return "chat_" + min + "_" + max;
+    }
+
+    /**
+     * Obtiene el historial de chat entre dos usuarios por sus IDs.
+     */
+    public List<DirectChatMessageResponseDTO> getMessagesByUserIds(Long myUserId, Long otherUserId) {
+        validateParticipants(myUserId, otherUserId);
+        List<ChatMessage> messages = chatMessageRepository.findChatHistoryByUserIds(myUserId, otherUserId);
+
+        return messages.stream()
+                .map(this::toDirectChatMessageDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Envía un mensaje en el chat 1:1 entre dos usuarios.
+     */
+    @Transactional
+    public DirectChatMessageResponseDTO sendMessageByUserIds(Long myUserId, Long otherUserId, SendDirectMessageRequest request) {
+        validateParticipants(myUserId, otherUserId);
+
+        User sender = userRepository.findById(myUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado: " + myUserId));
+        User recipient = userRepository.findById(otherUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado: " + otherUserId));
+
+        ChatMessage message = ChatMessage.builder()
+                .sender(sender)
+                .recipient(recipient)
+                .content(request.getContent())
+                .build();
+
+        ChatMessage saved = chatMessageRepository.save(message);
+
+        // Crear notificación para el destinatario
+        long min = Math.min(myUserId, otherUserId);
+        long max = Math.max(myUserId, otherUserId);
+        String chatId = "chat_" + min + "_" + max;
+        notificationService.createDirectMessageNotification(recipient, sender, chatId, request.getContent());
+
+        return toDirectChatMessageDTO(saved);
+    }
+
+    /**
+     * Valida que el usuario autenticado sea participante del chat.
+     */
+    private void validateParticipants(Long myUserId, Long otherUserId) {
+        if (myUserId.equals(otherUserId)) {
+            throw new IllegalArgumentException("No puedes chatear contigo mismo");
+        }
+    }
+
+    private DirectChatMessageResponseDTO toDirectChatMessageDTO(ChatMessage msg) {
+        return DirectChatMessageResponseDTO.builder()
+                .id(msg.getId())
+                .content(msg.getContent())
+                .senderId(msg.getSender().getId())
+                .senderName(msg.getSender().getName() + " " + msg.getSender().getSurname())
+                .timestamp(msg.getTimestamp())
+                .build();
     }
 }
