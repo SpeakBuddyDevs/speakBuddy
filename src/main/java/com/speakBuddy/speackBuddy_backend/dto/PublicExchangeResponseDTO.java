@@ -57,6 +57,9 @@ public class PublicExchangeResponseDTO {
     /** Si el usuario actual ya es participante del intercambio */
     private Boolean isJoined;
 
+    /** Si el usuario actual tiene una solicitud de unión pendiente para este intercambio */
+    private Boolean hasPendingJoinRequest;
+
     private Boolean isPublic;
     private String shareLink;
 }

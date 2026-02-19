@@ -68,6 +68,53 @@ public class NotificationService {
     }
 
     /**
+     * Crea una notificación de solicitud de unión a un intercambio público.
+     * Se envía al creador del intercambio.
+     */
+    @Transactional
+    public void createExchangeJoinRequestNotification(User recipient, Long exchangeId, User requester, String exchangeTitle) {
+        String title = "Solicitud para unirse a intercambio";
+        String body = requester.getUsername() + " quiere unirse a \"" + truncate(exchangeTitle != null ? exchangeTitle : "Intercambio", 50) + "\"";
+
+        Notification notification = Notification.builder()
+                .user(recipient)
+                .type(Notification.TYPE_EXCHANGE_JOIN_REQUEST)
+                .title(title)
+                .body(body)
+                .chatId(null)
+                .exchangeId(exchangeId)
+                .requester(requester)
+                .read(false)
+                .build();
+
+        notificationRepository.save(notification);
+    }
+
+    /**
+     * Notifica al solicitante que su solicitud de unión fue aceptada o rechazada.
+     */
+    @Transactional
+    public void createJoinRequestResponseNotification(User recipient, Long exchangeId, String exchangeTitle, boolean accepted) {
+        String title = accepted ? "Solicitud aceptada" : "Solicitud rechazada";
+        String body = accepted
+                ? "Tu solicitud para unirte a \"" + truncate(exchangeTitle != null ? exchangeTitle : "Intercambio", 50) + "\" ha sido aceptada."
+                : "Tu solicitud para unirte a \"" + truncate(exchangeTitle != null ? exchangeTitle : "Intercambio", 50) + "\" ha sido rechazada.";
+
+        Notification notification = Notification.builder()
+                .user(recipient)
+                .type(accepted ? Notification.TYPE_JOIN_REQUEST_ACCEPTED : Notification.TYPE_JOIN_REQUEST_REJECTED)
+                .title(title)
+                .body(body)
+                .chatId(null)
+                .exchangeId(exchangeId)
+                .requester(null)
+                .read(false)
+                .build();
+
+        notificationRepository.save(notification);
+    }
+
+    /**
      * Lista notificaciones del usuario con paginación.
      */
     public Page<NotificationResponseDTO> getNotifications(Long userId, Boolean unreadOnly, int page, int size) {
@@ -119,6 +166,7 @@ public class NotificationService {
                 .body(n.getBody())
                 .chatId(n.getChatId())
                 .exchangeId(n.getExchangeId())
+                .requesterUserId(n.getRequester() != null ? n.getRequester().getId() : null)
                 .read(n.getRead())
                 .createdAt(n.getCreatedAt())
                 .build();
