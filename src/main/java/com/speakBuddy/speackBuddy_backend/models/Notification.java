@@ -48,6 +48,14 @@ public class Notification {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    /** ID del usuario solicitante si type=EXCHANGE_JOIN_REQUEST */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "requester_user_id")
+    private User requester;
+
     public static final String TYPE_NEW_DIRECT_MESSAGE = "NEW_MESSAGE";
     public static final String TYPE_NEW_EXCHANGE_MESSAGE = "NEW_EXCHANGE_MESSAGE";
+    public static final String TYPE_EXCHANGE_JOIN_REQUEST = "EXCHANGE_JOIN_REQUEST";
+    public static final String TYPE_JOIN_REQUEST_ACCEPTED = "JOIN_REQUEST_ACCEPTED";
+    public static final String TYPE_JOIN_REQUEST_REJECTED = "JOIN_REQUEST_REJECTED";
 }

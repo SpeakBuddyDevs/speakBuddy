@@ -6,21 +6,18 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class NotificationResponseDTO {
+public class JoinRequestResponseDTO {
 
     private Long id;
-    private String type;
-    private String title;
-    private String body;
-    private String chatId;
-    private Long exchangeId;
-    /** ID del usuario solicitante cuando type=EXCHANGE_JOIN_REQUEST */
-    private Long requesterUserId;
-    private Boolean read;
+    private Long userId;
+    private String username;
     private LocalDateTime createdAt;
+    /** Requisitos no cumplidos por el solicitante (opcional) */
+    private List<String> unmetRequirements;
 }

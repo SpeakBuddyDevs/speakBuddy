@@ -3,6 +3,7 @@ package com.speakBuddy.speackBuddy_backend.controller;
 import com.speakBuddy.speackBuddy_backend.dto.CreateExchangeRequestDTO;
 import com.speakBuddy.speackBuddy_backend.dto.ExchangeChatMessageResponseDTO;
 import com.speakBuddy.speackBuddy_backend.dto.ExchangeResponseDTO;
+import com.speakBuddy.speackBuddy_backend.dto.JoinRequestResponseDTO;
 import com.speakBuddy.speackBuddy_backend.dto.PublicExchangeResponseDTO;
 import com.speakBuddy.speackBuddy_backend.dto.SendExchangeMessageRequest;
 import com.speakBuddy.speackBuddy_backend.exception.ResourceNotFoundException;
@@ -102,6 +103,44 @@ public class ExchangeController {
         Long userId = getCurrentUserId(userDetails);
         ExchangeResponseDTO result = exchangeService.join(id, userId);
         return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/{id}/join-request")
+    public ResponseEntity<Void> requestToJoin(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id) {
+        Long userId = getCurrentUserId(userDetails);
+        exchangeService.requestToJoin(id, userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/join-requests")
+    public ResponseEntity<List<JoinRequestResponseDTO>> getJoinRequests(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id) {
+        Long userId = getCurrentUserId(userDetails);
+        List<JoinRequestResponseDTO> requests = exchangeService.getJoinRequests(id, userId);
+        return ResponseEntity.ok(requests);
+    }
+
+    @PostMapping("/{id}/join-requests/{requestId}/accept")
+    public ResponseEntity<Void> acceptJoinRequest(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id,
+            @PathVariable Long requestId) {
+        Long userId = getCurrentUserId(userDetails);
+        exchangeService.acceptJoinRequest(id, requestId, userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/join-requests/{requestId}/reject")
+    public ResponseEntity<Void> rejectJoinRequest(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id,
+            @PathVariable Long requestId) {
+        Long userId = getCurrentUserId(userDetails);
+        exchangeService.rejectJoinRequest(id, requestId, userId);
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}/leave")
