@@ -48,6 +48,7 @@ public class ExchangeService {
     private final LanguageRepository languageRepository;
     private final LanguageLevelRepository languageLevelRepository;
     private final NotificationService notificationService;
+    private final ExperienceService experienceService;
 
     public ExchangeService(ExchangeRepository exchangeRepository,
                            ExchangeParticipantRepository participantRepository,
@@ -56,7 +57,8 @@ public class ExchangeService {
                            UserRepository userRepository,
                            LanguageRepository languageRepository,
                            LanguageLevelRepository languageLevelRepository,
-                           NotificationService notificationService) {
+                           NotificationService notificationService,
+                           ExperienceService experienceService) {
         this.exchangeRepository = exchangeRepository;
         this.participantRepository = participantRepository;
         this.joinRequestRepository = joinRequestRepository;
@@ -65,6 +67,7 @@ public class ExchangeService {
         this.languageRepository = languageRepository;
         this.languageLevelRepository = languageLevelRepository;
         this.notificationService = notificationService;
+        this.experienceService = experienceService;
     }
 
     @Transactional
@@ -477,6 +480,8 @@ public class ExchangeService {
                 u.setCompletedExchanges((u.getCompletedExchanges() != null ? u.getCompletedExchanges() : 0) + 1);
                 u.setTotalExchangeMinutes((u.getTotalExchangeMinutes() != null ? u.getTotalExchangeMinutes() : 0) + durationMinutes);
                 userRepository.save(u);
+
+                experienceService.addExperienceForExchange(u, durationMinutes);
             }
         }
 

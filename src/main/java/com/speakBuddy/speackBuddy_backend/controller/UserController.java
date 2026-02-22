@@ -4,6 +4,7 @@ import com.speakBuddy.speackBuddy_backend.dto.*;
 import com.speakBuddy.speackBuddy_backend.exception.ResourceNotFoundException;
 import com.speakBuddy.speackBuddy_backend.models.User;
 import com.speakBuddy.speackBuddy_backend.models.UserLanguagesLearning;
+import com.speakBuddy.speackBuddy_backend.service.ExperienceService;
 import com.speakBuddy.speackBuddy_backend.service.ReviewService;
 import com.speakBuddy.speackBuddy_backend.service.StorageService;
 import com.speakBuddy.speackBuddy_backend.service.StatsService;
@@ -33,14 +34,16 @@ public class UserController {
     private final ReviewService reviewService;
     private final StorageService storageService;
     private final StatsService statsService;
+    private final ExperienceService experienceService;
 
 
     @Autowired
-    public UserController(UserService userService, ReviewService reviewService, StorageService storageService, StatsService statsService) {
+    public UserController(UserService userService, ReviewService reviewService, StorageService storageService, StatsService statsService, ExperienceService experienceService) {
         this.userService = userService;
         this.reviewService = reviewService;
         this.storageService = storageService;
         this.statsService = statsService;
+        this.experienceService = experienceService;
     }
 
     // Endpoint 1: Obtener información del usuario
@@ -175,6 +178,38 @@ public class UserController {
 
         UserStatsDTO stats = statsService.getUserStats(user);
         return ResponseEntity.ok(stats);
+    }
+
+    /**
+     * Reclamar el bonus diario de XP.
+     * Otorga 5 XP multiplicado por la racha actual.
+     * Solo se puede reclamar una vez al día.
+     */
+    @PostMapping("/me/daily-bonus")
+    public ResponseEntity<Map<String, Object>> claimDailyBonus(@AuthenticationPrincipal UserDetails userDetails) {
+        User user = userService.getUserByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        boolean claimed = experienceService.claimDailyBonus(user);
+
+        if (claimed) {
+            User updatedUser = userService.getUserByEmail(userDetails.getUsername())
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Bonus diario reclamado",
+                    "newLevel", updatedUser.getLevel(),
+                    "experiencePoints", updatedUser.getExperiencePoints(),
+                    "currentStreakDays", updatedUser.getCurrentStreakDays() != null ? updatedUser.getCurrentStreakDays() : 0,
+                    "streakMultiplier", experienceService.getStreakMultiplier(updatedUser.getCurrentStreakDays() != null ? updatedUser.getCurrentStreakDays() : 0)
+            ));
+        } else {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Ya has reclamado el bonus diario hoy"
+            ));
+        }
     }
 
     @PatchMapping("/{userId}/languages/{code}/active")
