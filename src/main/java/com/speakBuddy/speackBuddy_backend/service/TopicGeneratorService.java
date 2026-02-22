@@ -5,14 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.speakBuddy.speackBuddy_backend.dto.GeneratedTopicResponseDTO;
 import com.speakBuddy.speackBuddy_backend.models.TopicCategory;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Service
@@ -20,6 +18,155 @@ public class TopicGeneratorService {
 
     private final ChatClient chatClient;
     private final ObjectMapper objectMapper;
+
+    private static final List<String> CONVERSATION_TOPICS = List.of(
+            "viajes y destinos soñados",
+            "tu lugar favorito del mundo",
+            "recuerdos de la infancia",
+            "tradiciones familiares",
+            "la mejor comida que has probado",
+            "música que te emociona",
+            "películas que te marcaron",
+            "libros que recomendarías",
+            "hobbies y pasatiempos",
+            "deportes que practicas o te gustan",
+            "mascotas y animales",
+            "tu rutina diaria ideal",
+            "sueños y metas personales",
+            "experiencias que cambiaron tu vida",
+            "amistades importantes",
+            "momentos embarazosos divertidos",
+            "festividades y celebraciones",
+            "comidas típicas de tu país",
+            "series de televisión favoritas",
+            "videojuegos y entretenimiento",
+            "redes sociales y su impacto",
+            "la naturaleza y el medio ambiente",
+            "ciudades que te gustaría visitar",
+            "aprender nuevos idiomas",
+            "trabajo de tus sueños",
+            "inventos que cambiaron el mundo",
+            "superpoderes que te gustaría tener",
+            "vida en el campo vs ciudad",
+            "estaciones del año favoritas",
+            "recetas de cocina familiares",
+            "conciertos o eventos memorables",
+            "arte y museos",
+            "fotografía y momentos capturados",
+            "moda y estilo personal",
+            "fitness y vida saludable",
+            "meditación y bienestar mental",
+            "voluntariado y ayudar a otros",
+            "aprender a tocar instrumentos",
+            "colecciones y objetos especiales",
+            "historias de tu familia",
+            "primeros trabajos y experiencias",
+            "mudanzas y cambios de vida",
+            "amigos de la infancia",
+            "profesores que te inspiraron",
+            "momentos de superación personal",
+            "cosas que te hacen feliz",
+            "planes para el fin de semana",
+            "vacaciones memorables",
+            "comida casera vs restaurantes",
+            "costumbres de otros países"
+    );
+
+    private static final List<String> DEBATE_TOPICS = List.of(
+            "redes sociales: ¿benefician o perjudican las relaciones?",
+            "trabajo remoto vs trabajo presencial",
+            "educación online vs educación tradicional",
+            "¿deberían los deberes escolares ser obligatorios?",
+            "energías renovables vs combustibles fósiles",
+            "comida rápida: ¿conveniencia o problema de salud?",
+            "¿es mejor alquilar o comprar una vivienda?",
+            "transporte público vs coche propio",
+            "¿deberían los influencers ser regulados?",
+            "inteligencia artificial: ¿oportunidad o amenaza?",
+            "¿es necesario ir a la universidad para tener éxito?",
+            "libros físicos vs libros electrónicos",
+            "¿deberían existir los zoológicos?",
+            "turismo masivo: ¿beneficio económico o daño cultural?",
+            "efectivo vs pagos digitales",
+            "¿es ético comer carne?",
+            "videojuegos: ¿entretenimiento sano o adicción?",
+            "¿deberían los padres controlar el uso de tecnología de sus hijos?",
+            "moda rápida vs moda sostenible",
+            "¿es mejor vivir en una ciudad grande o en un pueblo?",
+            "¿deberían ser gratuitos los museos?",
+            "¿es necesario aprender a conducir hoy en día?",
+            "televisión tradicional vs streaming",
+            "¿deberían existir los exámenes?",
+            "medicina tradicional vs medicina alternativa",
+            "¿es importante mantener las tradiciones?",
+            "¿deberían los deportes electrónicos considerarse deportes?",
+            "privacidad vs seguridad en internet",
+            "¿es mejor ser especialista o generalista?",
+            "¿deberían las propinas ser obligatorias?",
+            "¿es ético usar animales en investigación?",
+            "jubilación temprana vs trabajar hasta mayor edad",
+            "¿deberían prohibirse los coches en centros urbanos?",
+            "educación bilingüe: ¿ventaja o confusión?",
+            "¿es mejor comprar local o en grandes superficies?",
+            "¿deberían los uniformes escolares ser obligatorios?",
+            "teletrabajo: ¿libertad o aislamiento?",
+            "¿es importante tener título universitario?",
+            "¿deberían las redes sociales verificar la edad?",
+            "turismo espacial: ¿avance o frivolidad?"
+    );
+
+    private static final List<String> ROLEPLAY_SCENARIOS = List.of(
+            "pedir comida en un restaurante",
+            "hacer el check-in en un hotel",
+            "comprar ropa en una tienda",
+            "pedir indicaciones en la calle",
+            "ir al médico por un resfriado",
+            "comprar billetes de tren",
+            "alquilar un coche",
+            "hacer una reserva por teléfono",
+            "devolver un producto defectuoso",
+            "abrir una cuenta en el banco",
+            "pedir cita en la peluquería",
+            "comprar medicinas en la farmacia",
+            "registrarse en el aeropuerto",
+            "pedir ayuda en una tienda de electrónica",
+            "quejarse del ruido a un vecino",
+            "negociar el precio en un mercadillo",
+            "pedir recomendaciones en una librería",
+            "solicitar información turística",
+            "hacer una reclamación en un hotel",
+            "presentarse en una entrevista de trabajo",
+            "pedir un café con especificaciones",
+            "inscribirse en un gimnasio",
+            "alquilar un apartamento",
+            "llamar a servicio técnico",
+            "pedir la cuenta en un restaurante",
+            "cambiar dinero en una casa de cambio",
+            "solicitar un visado en una embajada",
+            "reportar un objeto perdido",
+            "comprar entradas para un concierto",
+            "pedir información sobre un curso",
+            "hacer una cita con el dentista",
+            "preguntar por ofertas en un supermercado",
+            "enviar un paquete en correos",
+            "reservar una mesa para una celebración",
+            "pedir disculpas por llegar tarde",
+            "solicitar una extensión de plazo",
+            "presentar a un amigo a tu familia",
+            "organizar una fiesta sorpresa",
+            "dar feedback a un compañero de trabajo",
+            "negociar un aumento de sueldo",
+            "pedir prestado algo a un vecino",
+            "explicar un problema técnico por teléfono",
+            "hacer una denuncia en comisaría",
+            "pedir consejo en una tienda de vinos",
+            "contratar un servicio de mudanzas",
+            "consultar al veterinario sobre tu mascota",
+            "matricularse en una autoescuela",
+            "solicitar información en una inmobiliaria",
+            "pedir un presupuesto para una reforma",
+            "reservar actividades en un hotel resort"
+    );
 
     @Autowired
     public TopicGeneratorService(ChatClient.Builder chatClientBuilder) {
@@ -38,62 +185,55 @@ public class TopicGeneratorService {
         return parseResponse(response, category, level, languageCode);
     }
 
+    private String getRandomTopic(TopicCategory category) {
+        List<String> topics = switch (category) {
+            case CONVERSATION -> CONVERSATION_TOPICS;
+            case DEBATE -> DEBATE_TOPICS;
+            case ROLEPLAY -> ROLEPLAY_SCENARIOS;
+        };
+        int index = ThreadLocalRandom.current().nextInt(topics.size());
+        return topics.get(index);
+    }
+
     private String buildPrompt(TopicCategory category, String level, String languageCode) {
         String languageName = getLanguageName(languageCode);
         String levelDescription = getLevelDescription(level);
-        int randomSeed = ThreadLocalRandom.current().nextInt(1, 10001);
+        String selectedTopic = getRandomTopic(category);
 
         StringBuilder sb = new StringBuilder();
-        sb.append("[Solicitud #").append(randomSeed).append("]\n\n");
-        sb.append("Genera un tema de conversación ÚNICO y DIFERENTE para practicar idiomas. ");
-        sb.append("El tema debe estar escrito en ").append(languageName).append(". ");
-        sb.append("El nivel de dificultad es: ").append(levelDescription).append(". ");
+        sb.append("Genera contenido para practicar idiomas. ");
+        sb.append("El contenido debe estar escrito en ").append(languageName).append(". ");
+        sb.append("El nivel de dificultad es: ").append(levelDescription).append(".\n\n");
 
         switch (category) {
             case CONVERSATION -> {
-                sb.append("\n\nTipo: CONVERSACIÓN GENERAL\n");
-                sb.append("Genera un tema de conversación cotidiano que invite a la reflexión y el intercambio de opiniones. ");
-                sb.append("Debe ser una pregunta abierta o una situación sobre la que hablar. ");
-                sb.append("Elige UN tema de entre estas categorías (varía tu elección): ");
-                sb.append("viajes y aventuras, hobbies y tiempo libre, recuerdos y experiencias, ");
-                sb.append("cultura y tradiciones, tecnología y futuro, vida diaria y rutinas, ");
-                sb.append("comida y gastronomía, música y entretenimiento, deportes, naturaleza y medio ambiente, ");
-                sb.append("familia y amigos, trabajo y estudios, sueños y metas, libros y películas, moda y tendencias.\n");
+                sb.append("TEMA ASIGNADO: ").append(selectedTopic.toUpperCase()).append("\n\n");
+                sb.append("Genera UNA pregunta abierta o tema de conversación sobre: \"").append(selectedTopic).append("\". ");
+                sb.append("La pregunta debe invitar a la reflexión y al intercambio de opiniones. ");
+                sb.append("Sé creativo y original con tu enfoque del tema.\n");
             }
             case DEBATE -> {
-                sb.append("\n\nTipo: DEBATE\n");
-                sb.append("Genera un tema de debate con dos posturas claramente opuestas. ");
+                sb.append("TEMA DE DEBATE ASIGNADO: ").append(selectedTopic.toUpperCase()).append("\n\n");
+                sb.append("Genera un tema de debate sobre: \"").append(selectedTopic).append("\". ");
+                sb.append("Debe tener dos posturas claramente opuestas. ");
                 sb.append("Una persona defenderá la Postura A y otra la Postura B. ");
-                sb.append("El tema debe ser controvertido pero respetuoso. ");
-                sb.append("Incluye una breve descripción de cada postura. ");
-                sb.append("Elige UN área temática (varía tu elección): ");
-                sb.append("tecnología, educación, medio ambiente, trabajo, redes sociales, ");
-                sb.append("salud, economía, cultura, política social, estilo de vida, ");
-                sb.append("inteligencia artificial, transporte, urbanismo, alimentación, ocio.\n");
+                sb.append("El planteamiento debe ser respetuoso. ");
+                sb.append("Incluye una breve descripción de cada postura.\n");
             }
             case ROLEPLAY -> {
-                sb.append("\n\nTipo: ROLEPLAY (Juego de roles)\n");
-                sb.append("Genera un escenario realista de la vida cotidiana para practicar situaciones reales. ");
-                sb.append("Describe brevemente la situación y los roles de cada participante. ");
-                sb.append("Elige UN escenario de entre estos (varía tu elección): ");
-                sb.append("entrevista de trabajo, restaurante o cafetería, tienda de ropa, ");
-                sb.append("consulta médica, aeropuerto o estación, hotel o alojamiento, ");
-                sb.append("banco, oficina de correos, llamada telefónica de servicio al cliente, ");
-                sb.append("alquiler de coche o piso, gimnasio, peluquería, farmacia, ");
-                sb.append("fiesta o evento social, clase o tutoría, reunión de vecinos, cita a ciegas, ");
-                sb.append("mudanza, visita turística guiada, queja formal, negociación de precio.\n");
+                sb.append("ESCENARIO ASIGNADO: ").append(selectedTopic.toUpperCase()).append("\n\n");
+                sb.append("Genera un escenario de roleplay sobre: \"").append(selectedTopic).append("\". ");
+                sb.append("Describe la situación específica y los roles de cada participante. ");
+                sb.append("Incluye contexto suficiente para que los participantes puedan improvisar el diálogo.\n");
             }
         }
 
-        sb.append("\nIMPORTANTE: Sé creativo y genera un tema diferente cada vez. ");
-        sb.append("Varía los escenarios, las situaciones y los enfoques.\n");
-
-        sb.append("\nAdemás, incluye 5 palabras o expresiones de vocabulario relevantes para este tema ");
-        sb.append("que sean apropiadas para el nivel ").append(level).append(".\n\n");
+        sb.append("\nIncluye 5 palabras o expresiones de vocabulario útiles para esta situación, ");
+        sb.append("apropiadas para el nivel ").append(level).append(".\n\n");
 
         sb.append("Responde ÚNICAMENTE con un JSON válido en este formato exacto:\n");
         sb.append("{\n");
-        sb.append("  \"mainText\": \"El texto principal del tema o pregunta\",\n");
+        sb.append("  \"mainText\": \"El texto principal del tema, pregunta o situación\",\n");
 
         if (category == TopicCategory.DEBATE) {
             sb.append("  \"positionA\": \"Postura A: descripción breve de la primera postura\",\n");
