@@ -6,6 +6,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -87,5 +88,17 @@ public class User {
 
     @Column(length = 100)
     private String country;
+
+    @Column(name = "last_activity_date")
+    private LocalDate lastActivityDate;
+
+    @Column(name = "current_streak_days", columnDefinition = "INT DEFAULT 0")
+    private Integer currentStreakDays = 0;
+
+    @Column(name = "best_streak_days", columnDefinition = "INT DEFAULT 0")
+    private Integer bestStreakDays = 0;
+
+    @Column(name = "last_daily_bonus_date")
+    private LocalDate lastDailyBonusDate;
 
 }

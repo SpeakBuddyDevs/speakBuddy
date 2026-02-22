@@ -35,18 +35,21 @@ public class UserService {
     private final LanguageLevelRepository languageLevelRepository;
     private final UserLanguageLearningRepository userLanguageLearningRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ExperienceService experienceService;
 
     @Autowired
     public UserService(UserRepository userRepository,
                        LanguageRepository languageRepository,
                        LanguageLevelRepository languageLevelRepository,
                        UserLanguageLearningRepository userLanguageLearningRepository,
-                       PasswordEncoder passwordEncoder) {
+                       PasswordEncoder passwordEncoder,
+                       ExperienceService experienceService) {
         this.userRepository = userRepository;
         this.languageRepository = languageRepository;
         this.languageLevelRepository = languageLevelRepository;
         this.userLanguageLearningRepository = userLanguageLearningRepository;
         this.passwordEncoder = passwordEncoder;
+        this.experienceService = experienceService;
     }
 
 
@@ -348,18 +351,24 @@ public class UserService {
     }
 
     public UserProfileDTO mapToUserProfileDTO(User user) {
-        // Mapear idiomas aprendiendo
         List<UserProfileDTO.LearningLanguageDTO> learningDTOs = user.getLanguagesToLearn().stream()
                 .map(l -> UserProfileDTO.LearningLanguageDTO.builder()
                         .code(l.getLanguage().getIsoCode())
                         .name(l.getLanguage().getName())
-                        .level(l.getLevel().getName()) // Ej: "A1 - Principiante"
+                        .level(l.getLevel().getName())
                         .active(l.isActive())
                         .build())
                 .toList();
 
+        int currentLevel = user.getLevel() != null ? user.getLevel() : 1;
+        long currentXp = user.getExperiencePoints() != null ? user.getExperiencePoints() : 0L;
+        long xpToNextLevel = experienceService.getXpRequiredForLevel(currentLevel);
+        double progressPct = experienceService.getProgressPercentage(user);
+        int streakDays = user.getCurrentStreakDays() != null ? user.getCurrentStreakDays() : 0;
+        double streakMultiplier = experienceService.getStreakMultiplier(streakDays);
+        boolean canClaimDailyBonus = experienceService.canClaimDailyBonus(user);
+
         return UserProfileDTO.builder()
-                // Datos Reales
                 .id(user.getId())
                 .name(user.getName() + " " + user.getSurname())
                 .email(user.getEmail())
@@ -368,20 +377,22 @@ public class UserService {
                 .rating(user.getAverageRating())
                 .exchanges(user.getCompletedExchanges() != null ? user.getCompletedExchanges() : 0)
                 .learningLanguages(learningDTOs)
-
-                .level(1) // Nivel base
-                .progressPct(0.0)
+                .level(currentLevel)
+                .experiencePoints(currentXp)
+                .xpToNextLevel(xpToNextLevel)
+                .progressPct(progressPct)
+                .streakMultiplier(streakMultiplier)
+                .canClaimDailyBonus(canClaimDailyBonus)
                 .languagesCount(learningDTOs.size())
                 .hoursTotal(user.getTotalExchangeMinutes() != null
                         ? user.getTotalExchangeMinutes() / 60.0
                         : 0.0)
-                .currentStreakDays(0)
-                .bestStreakDays(0)
+                .currentStreakDays(streakDays)
+                .bestStreakDays(user.getBestStreakDays() != null ? user.getBestStreakDays() : 0)
                 .medals(0)
                 .isPro(user.getRole() != null && user.getRole() == Role.ROLE_PREMIUM)
-                .avatarUrl(null)
+                .avatarUrl(user.getProfilePicture())
                 .description(user.getDescription() != null ? user.getDescription() : "")
-                .learningLanguages(learningDTOs)
                 .build();
     }
 

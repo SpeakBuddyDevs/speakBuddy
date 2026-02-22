@@ -17,7 +17,11 @@ public class UserProfileDTO {
     private List<LearningLanguageDTO> learningLanguages;
 
     private Integer level;
+    private Long experiencePoints;
+    private Long xpToNextLevel;
     private Double progressPct;
+    private Double streakMultiplier;
+    private Boolean canClaimDailyBonus;
     private Integer languagesCount;
     /** Horas totales de intercambios (calculado desde totalExchangeMinutes / 60.0). */
     private Double hoursTotal;
