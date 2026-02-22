@@ -8,4 +8,9 @@ public class ExchangeParticipantDTO {
     private String username;
     private boolean confirmed;
     private String role; // creator, participant
+    
+    private String avatarUrl;
+    private Double rating;
+    private String country;
+    private Boolean isPro;
 }
