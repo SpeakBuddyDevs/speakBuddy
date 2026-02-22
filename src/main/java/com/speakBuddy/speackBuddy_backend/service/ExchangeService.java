@@ -688,11 +688,16 @@ public class ExchangeService {
         List<ExchangeParticipant> participants = participantRepository.findByExchange(exchange);
         List<ExchangeParticipantDTO> participantDTOs = participants.stream()
                 .map(p -> {
+                    User u = p.getUser();
                     ExchangeParticipantDTO dto = new ExchangeParticipantDTO();
-                    dto.setUserId(p.getUser().getId());
-                    dto.setUsername(p.getUser().getUsername());
+                    dto.setUserId(u.getId());
+                    dto.setUsername(u.getUsername());
                     dto.setConfirmed(p.isConfirmed());
                     dto.setRole(p.getRole());
+                    dto.setAvatarUrl(u.getProfilePicture());
+                    dto.setRating(u.getAverageRating());
+                    dto.setCountry(u.getCountry());
+                    dto.setIsPro(u.getRole() == Role.ROLE_PREMIUM);
                     return dto;
                 })
                 .collect(Collectors.toList());
@@ -737,6 +742,13 @@ public class ExchangeService {
                 .allConfirmed(allConfirmed)
                 .lastMessageAt(lastMessageAt)
                 .password(password)
+                .nativeLanguage(resolveLanguageName(exchange.getNativeLanguageCode()))
+                .targetLanguage(resolveLanguageName(exchange.getTargetLanguageCode()))
+                .platforms(exchange.getPlatforms() != null && !exchange.getPlatforms().isEmpty()
+                        ? exchange.getPlatforms() : null)
+                .maxParticipants(exchange.getMaxParticipants())
+                .topics(exchange.getTopics() != null && !exchange.getTopics().isEmpty()
+                        ? exchange.getTopics() : null)
                 .build();
     }
 

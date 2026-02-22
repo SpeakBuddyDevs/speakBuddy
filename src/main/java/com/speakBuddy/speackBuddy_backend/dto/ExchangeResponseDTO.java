@@ -39,4 +39,29 @@ public class ExchangeResponseDTO {
      * Contraseña del intercambio privado. Solo visible para el creador.
      */
     private String password;
+
+    /**
+     * Nombre del idioma nativo que el creador ofrece (ej: "Español")
+     */
+    private String nativeLanguage;
+
+    /**
+     * Nombre del idioma que el creador quiere practicar (ej: "Inglés")
+     */
+    private String targetLanguage;
+
+    /**
+     * Plataformas de videollamada (Zoom, Google Meet, etc.)
+     */
+    private List<String> platforms;
+
+    /**
+     * Número máximo de participantes (null = sin límite)
+     */
+    private Integer maxParticipants;
+
+    /**
+     * Temas de conversación opcionales (ej: Viajes, turismo, cultura)
+     */
+    private List<String> topics;
 }
