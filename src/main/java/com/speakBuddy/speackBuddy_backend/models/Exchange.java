@@ -81,6 +81,10 @@ public class Exchange {
     @Column(name = "platform", length = 100)
     private List<String> platforms = new ArrayList<>();
 
+    /** Contraseña para unirse a intercambios privados. Null en intercambios públicos. */
+    @Column(name = "password", length = 20)
+    private String password;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
