@@ -3,6 +3,7 @@ package com.speakBuddy.speackBuddy_backend.controller;
 import com.speakBuddy.speackBuddy_backend.dto.CreateExchangeRequestDTO;
 import com.speakBuddy.speackBuddy_backend.dto.ExchangeChatMessageResponseDTO;
 import com.speakBuddy.speackBuddy_backend.dto.ExchangeResponseDTO;
+import com.speakBuddy.speackBuddy_backend.dto.JoinWithPasswordRequestDTO;
 import com.speakBuddy.speackBuddy_backend.dto.JoinRequestResponseDTO;
 import com.speakBuddy.speackBuddy_backend.dto.PublicExchangeResponseDTO;
 import com.speakBuddy.speackBuddy_backend.dto.SendExchangeMessageRequest;
@@ -102,6 +103,19 @@ public class ExchangeController {
             @PathVariable Long id) {
         Long userId = getCurrentUserId(userDetails);
         ExchangeResponseDTO result = exchangeService.join(id, userId);
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * Unirse a un intercambio privado usando contraseña.
+     */
+    @PostMapping("/{id}/join-with-password")
+    public ResponseEntity<ExchangeResponseDTO> joinWithPassword(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id,
+            @Valid @RequestBody JoinWithPasswordRequestDTO request) {
+        Long userId = getCurrentUserId(userDetails);
+        ExchangeResponseDTO result = exchangeService.joinWithPassword(id, request.getPassword(), userId);
         return ResponseEntity.ok(result);
     }
 

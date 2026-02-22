@@ -34,4 +34,9 @@ public class ExchangeResponseDTO {
      * El cliente lo usa para mostrar indicador "mensajes nuevos".
      */
     private LocalDateTime lastMessageAt;
+
+    /**
+     * Contraseña del intercambio privado. Solo visible para el creador.
+     */
+    private String password;
 }

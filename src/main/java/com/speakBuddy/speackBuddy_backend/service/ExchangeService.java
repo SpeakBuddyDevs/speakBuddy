@@ -23,6 +23,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -107,6 +108,11 @@ public class ExchangeService {
         if (dto.getPlatforms() != null && !dto.getPlatforms().isEmpty()) {
             exchange.setPlatforms(new ArrayList<>(dto.getPlatforms()));
         }
+        // Generar contraseña para intercambios privados
+        if (Boolean.FALSE.equals(dto.getIsPublic())) {
+            String password = generateRandomPassword(6);
+            exchange.setPassword(password);
+        }
         exchange = exchangeRepository.save(exchange);
 
         ExchangeParticipant creatorParticipant = new ExchangeParticipant();
@@ -173,6 +179,48 @@ public class ExchangeService {
 
         if (exchange.getStatus() != ExchangeStatus.SCHEDULED) {
             throw new IllegalArgumentException("No se pueden unir intercambios que ya han terminado o están cancelados");
+        }
+
+        if (participantRepository.existsByExchangeAndUser(exchange, user)) {
+            throw new IllegalArgumentException("Ya eres participante de este intercambio");
+        }
+
+        int currentCount = participantRepository.findByExchange(exchange).size();
+        if (exchange.getMaxParticipants() != null && currentCount >= exchange.getMaxParticipants()) {
+            throw new IllegalArgumentException("El intercambio está completo");
+        }
+
+        ExchangeParticipant participant = new ExchangeParticipant();
+        participant.setExchange(exchange);
+        participant.setUser(user);
+        participant.setRole("participant");
+        participantRepository.save(participant);
+
+        return toResponseDTO(exchange, userId);
+    }
+
+    /**
+     * Permite unirse a un intercambio privado validando la contraseña.
+     * No comprueba requisitos de nivel/idioma (los intercambios privados son por invitación).
+     */
+    @Transactional
+    public ExchangeResponseDTO joinWithPassword(Long exchangeId, String password, Long userId) {
+        Exchange exchange = exchangeRepository.findById(exchangeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Intercambio no encontrado"));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        if (Boolean.TRUE.equals(exchange.getIsPublic())) {
+            throw new IllegalArgumentException("Este intercambio es público. Usa el botón Unirse habitual");
+        }
+
+        if (exchange.getPassword() == null || !exchange.getPassword().equalsIgnoreCase(password.trim())) {
+            throw new IllegalArgumentException("Contraseña incorrecta");
+        }
+
+        if (exchange.getStatus() != ExchangeStatus.SCHEDULED) {
+            throw new IllegalArgumentException("Este intercambio ya no está disponible");
         }
 
         if (participantRepository.existsByExchangeAndUser(exchange, user)) {
@@ -503,6 +551,15 @@ public class ExchangeService {
 
         var eligibility = computeEligibility(exchange, currentUser, minOrder, maxOrder, targetLanguageName, nativeLanguageName);
 
+        // Contraseña solo visible para el creador
+        String password = null;
+        if (Boolean.FALSE.equals(exchange.getIsPublic()) 
+            && currentUser != null 
+            && creator != null 
+            && currentUser.getId().equals(creator.getId())) {
+            password = exchange.getPassword();
+        }
+
         return PublicExchangeResponseDTO.builder()
                 .id(exchange.getId())
                 .title(exchange.getTitle() != null ? exchange.getTitle() : "Intercambio")
@@ -528,7 +585,7 @@ public class ExchangeService {
                 .isJoined(isJoined)
                 .hasPendingJoinRequest(hasPendingJoinRequest)
                 .isPublic(Boolean.TRUE.equals(exchange.getIsPublic()))
-                .shareLink(null)
+                .password(password)
                 .build();
     }
 
@@ -651,6 +708,17 @@ public class ExchangeService {
                 .map(ExchangeChatMessage::getTimestamp)
                 .orElse(null);
 
+        // Contraseña solo visible para el creador
+        String password = null;
+        User creator = findCreator(exchange);
+        User currentUser = userRepository.findById(currentUserId).orElse(null);
+        if (Boolean.FALSE.equals(exchange.getIsPublic()) 
+            && currentUser != null 
+            && creator != null 
+            && currentUser.getId().equals(creator.getId())) {
+            password = exchange.getPassword();
+        }
+
         return ExchangeResponseDTO.builder()
                 .id(exchange.getId())
                 .scheduledAt(exchange.getScheduledAt())
@@ -663,6 +731,17 @@ public class ExchangeService {
                 .canConfirm(canConfirm)
                 .allConfirmed(allConfirmed)
                 .lastMessageAt(lastMessageAt)
+                .password(password)
                 .build();
+    }
+
+    private String generateRandomPassword(int length) {
+        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        SecureRandom random = new SecureRandom();
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return sb.toString();
     }
 }

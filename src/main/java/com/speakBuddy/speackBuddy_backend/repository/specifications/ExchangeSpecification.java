@@ -9,7 +9,7 @@ import org.springframework.util.StringUtils;
 import java.time.LocalDateTime;
 
 /**
- * Specification para filtrar intercambios públicos.
+ * Specification para filtrar intercambios (públicos y privados).
  */
 public class ExchangeSpecification {
 
@@ -26,9 +26,7 @@ public class ExchangeSpecification {
 
             var predicate = criteriaBuilder.conjunction();
 
-            // Solo intercambios públicos
-            predicate = criteriaBuilder.and(predicate,
-                    criteriaBuilder.isTrue(root.get("isPublic")));
+            // Intercambios públicos y privados (los privados mostrarán candado en el cliente)
 
             // Solo programados (no cancelados ni completados)
             predicate = criteriaBuilder.and(predicate,

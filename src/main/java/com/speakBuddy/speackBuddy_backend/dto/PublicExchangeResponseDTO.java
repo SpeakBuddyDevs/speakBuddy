@@ -61,5 +61,7 @@ public class PublicExchangeResponseDTO {
     private Boolean hasPendingJoinRequest;
 
     private Boolean isPublic;
-    private String shareLink;
+    
+    /** Contraseña del intercambio privado. Solo visible para el creador. */
+    private String password;
 }
