@@ -24,4 +24,6 @@ public interface ExchangeParticipantRepository extends JpaRepository<ExchangePar
      * Se utiliza para calcular estadísticas de intercambios completados.
      */
     List<ExchangeParticipant> findByUserAndConfirmedIsTrueAndExchange_Status(User user, ExchangeStatus status);
+
+    long countByUserAndRole(User user, String role);
 }

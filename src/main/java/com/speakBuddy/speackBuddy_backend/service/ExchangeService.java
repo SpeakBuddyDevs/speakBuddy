@@ -7,6 +7,7 @@ import com.speakBuddy.speackBuddy_backend.dto.JoinRequestResponseDTO;
 import com.speakBuddy.speackBuddy_backend.dto.PublicExchangeResponseDTO;
 import com.speakBuddy.speackBuddy_backend.exception.ResourceNotFoundException;
 import com.speakBuddy.speackBuddy_backend.models.*;
+import com.speakBuddy.speackBuddy_backend.models.AchievementType;
 import com.speakBuddy.speackBuddy_backend.repository.ExchangeChatMessageRepository;
 import com.speakBuddy.speackBuddy_backend.repository.ExchangeJoinRequestRepository;
 import com.speakBuddy.speackBuddy_backend.repository.ExchangeParticipantRepository;
@@ -49,6 +50,7 @@ public class ExchangeService {
     private final LanguageLevelRepository languageLevelRepository;
     private final NotificationService notificationService;
     private final ExperienceService experienceService;
+    private final AchievementService achievementService;
 
     public ExchangeService(ExchangeRepository exchangeRepository,
                            ExchangeParticipantRepository participantRepository,
@@ -58,7 +60,8 @@ public class ExchangeService {
                            LanguageRepository languageRepository,
                            LanguageLevelRepository languageLevelRepository,
                            NotificationService notificationService,
-                           ExperienceService experienceService) {
+                           ExperienceService experienceService,
+                           AchievementService achievementService) {
         this.exchangeRepository = exchangeRepository;
         this.participantRepository = participantRepository;
         this.joinRequestRepository = joinRequestRepository;
@@ -68,6 +71,7 @@ public class ExchangeService {
         this.languageLevelRepository = languageLevelRepository;
         this.notificationService = notificationService;
         this.experienceService = experienceService;
+        this.achievementService = achievementService;
     }
 
     @Transactional
@@ -123,6 +127,10 @@ public class ExchangeService {
         creatorParticipant.setUser(creator);
         creatorParticipant.setRole("creator");
         participantRepository.save(creatorParticipant);
+
+        // Actualizar logro HOST (intercambios creados)
+        long exchangesCreated = participantRepository.countByUserAndRole(creator, "creator");
+        achievementService.updateProgressByType(creator.getId(), AchievementType.HOST, (int) exchangesCreated);
 
         if (dto.getParticipantUserIds() != null) {
             for (Long userId : dto.getParticipantUserIds()) {
@@ -482,6 +490,18 @@ public class ExchangeService {
                 userRepository.save(u);
 
                 experienceService.addExperienceForExchange(u, durationMinutes);
+
+                // Actualizar logros relacionados con intercambios completados
+                int completedExchanges = u.getCompletedExchanges();
+                achievementService.updateProgressByType(u.getId(), AchievementType.CONVERSATIONALIST, completedExchanges);
+
+                // Actualizar logro de racha
+                int streakDays = u.getCurrentStreakDays() != null ? u.getCurrentStreakDays() : 0;
+                achievementService.updateProgressByType(u.getId(), AchievementType.STREAK, streakDays);
+
+                // Actualizar logro de políglota (idiomas que practica)
+                int languagesCount = u.getLanguagesToLearn().size() + 1; // idiomas que aprende + nativo
+                achievementService.updateProgressByType(u.getId(), AchievementType.POLYGLOT, languagesCount);
             }
         }
 

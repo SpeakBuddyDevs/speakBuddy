@@ -2,6 +2,7 @@ package com.speakBuddy.speackBuddy_backend.service;
 
 import com.speakBuddy.speackBuddy_backend.dto.ReviewRequestDTO;
 import com.speakBuddy.speackBuddy_backend.exception.ResourceNotFoundException;
+import com.speakBuddy.speackBuddy_backend.models.AchievementType;
 import com.speakBuddy.speackBuddy_backend.models.Review;
 import com.speakBuddy.speackBuddy_backend.models.User;
 import com.speakBuddy.speackBuddy_backend.repository.ReviewRepository;
@@ -18,10 +19,12 @@ public class ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
+    private final AchievementService achievementService;
 
-    public ReviewService(ReviewRepository reviewRepository, UserRepository userRepository) {
+    public ReviewService(ReviewRepository reviewRepository, UserRepository userRepository, AchievementService achievementService) {
         this.reviewRepository = reviewRepository;
         this.userRepository = userRepository;
+        this.achievementService = achievementService;
     }
 
     @Transactional
@@ -77,6 +80,12 @@ public class ReviewService {
             reviewRepository.save(newReview);
 
             recalculateRatingOnCreate(reviewee, dto.getScore());
+        }
+
+        // Si la valoración es 5 estrellas, actualizar logro STAR del reviewee
+        if (dto.getScore() != null && dto.getScore().intValue() == 5) {
+            long fiveStarReviews = reviewRepository.countByRevieweeAndScore(reviewee, 5);
+            achievementService.updateProgressByType(reviewee.getId(), AchievementType.STAR, (int) fiveStarReviews);
         }
     }
 
