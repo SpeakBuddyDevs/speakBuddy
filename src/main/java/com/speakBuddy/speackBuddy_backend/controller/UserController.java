@@ -76,17 +76,6 @@ public class UserController {
         return ResponseEntity.ok(updatedProfile);
     }
 
-    // Endpoint 4: Eliminar un idioma que el usuario está aprendiendo
-    @DeleteMapping("/{id}/languages/learn/{languageId}")
-    public ResponseEntity<ProfileResponseDTO> deleteLearningLanguage(
-            @PathVariable Long id,
-            @PathVariable Long languageId
-    ) {
-        ProfileResponseDTO updatedProfile = userService.deleteLearningLanguage(id, languageId);
-
-        return ResponseEntity.ok(updatedProfile);
-    }
-
     // --- Endpoint 5: Actualizar el Idioma Nativo ---
     @PutMapping("/{id}/languages/native")
     public ResponseEntity<ProfileResponseDTO> updateNativeLanguage(
@@ -94,18 +83,6 @@ public class UserController {
             @RequestBody UpdateNativeLanguageDTO dto
     ) {
         ProfileResponseDTO updatedProfile = userService.updateNativeLanguage(id, dto);
-
-        return ResponseEntity.ok(updatedProfile);
-    }
-
-    // --- Endpoint 6: Actualizar Nivel de Idioma de Aprendizaje ---
-    @PutMapping("/{id}/languages/learn/{learningId}")
-    public ResponseEntity<ProfileResponseDTO> updateLearningLevel(
-            @PathVariable Long id,        // El ID del Usuario
-            @PathVariable Long learningId, // El ID de la *relación* a cambiar
-            @RequestBody UpdateLearningLevelDTO dto
-    ) {
-        ProfileResponseDTO updatedProfile = userService.updateLearningLevel(id, learningId, dto);
 
         return ResponseEntity.ok(updatedProfile);
     }

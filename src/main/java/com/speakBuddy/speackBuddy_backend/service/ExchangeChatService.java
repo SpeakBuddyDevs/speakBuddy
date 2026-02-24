@@ -27,23 +27,22 @@ public class ExchangeChatService {
     private final ExchangeChatMessageRepository messageRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final ChatMessageMapper chatMessageMapper;
 
     public ExchangeChatService(ExchangeRepository exchangeRepository,
                                ExchangeParticipantRepository participantRepository,
                                ExchangeChatMessageRepository messageRepository,
                                UserRepository userRepository,
-                               NotificationService notificationService) {
+                               NotificationService notificationService,
+                               ChatMessageMapper chatMessageMapper) {
         this.exchangeRepository = exchangeRepository;
         this.participantRepository = participantRepository;
         this.messageRepository = messageRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
+        this.chatMessageMapper = chatMessageMapper;
     }
 
-    /**
-     * Verifica que el usuario es participante del intercambio.
-     * Lanza ResourceNotFoundException si no existe el intercambio o el usuario no es participante.
-     */
     private void ensureParticipant(Long exchangeId, Long userId) {
         Exchange exchange = exchangeRepository.findById(exchangeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Intercambio no encontrado"));
@@ -53,33 +52,23 @@ public class ExchangeChatService {
                 .orElseThrow(() -> new ResourceNotFoundException("No eres participante de este intercambio"));
     }
 
-    /**
-     * Lista mensajes del chat del intercambio (solo participantes).
-     */
     public List<ExchangeChatMessageResponseDTO> getMessages(Long exchangeId, Long userId) {
         ensureParticipant(exchangeId, userId);
         Exchange exchange = exchangeRepository.findById(exchangeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Intercambio no encontrado"));
-        List<ExchangeChatMessage> messages = messageRepository.findByExchangeOrderByTimestampAsc(exchange);
-        return messages.stream()
-                .map(this::toDto)
+        return messageRepository.findByExchangeOrderByTimestampAsc(exchange).stream()
+                .map(chatMessageMapper::toExchangeChatMessageDTO)
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Lista mensajes del chat del intercambio con paginación (solo participantes).
-     */
     public Page<ExchangeChatMessageResponseDTO> getMessages(Long exchangeId, Long userId, Pageable pageable) {
         ensureParticipant(exchangeId, userId);
         Exchange exchange = exchangeRepository.findById(exchangeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Intercambio no encontrado"));
         return messageRepository.findByExchangeOrderByTimestampAsc(exchange, pageable)
-                .map(this::toDto);
+                .map(chatMessageMapper::toExchangeChatMessageDTO);
     }
 
-    /**
-     * Envía un mensaje al chat del intercambio (solo participantes).
-     */
     @Transactional
     public ExchangeChatMessageResponseDTO sendMessage(Long exchangeId, Long userId, SendExchangeMessageRequest request) {
         ensureParticipant(exchangeId, userId);
@@ -95,7 +84,6 @@ public class ExchangeChatService {
                 .build();
         message = messageRepository.save(message);
 
-        // Crear notificación para el resto de participantes (excluyendo al emisor)
         String senderName = sender.getName() + " " + sender.getSurname();
         String messagePreview = request.getContent().trim();
         for (ExchangeParticipant p : participantRepository.findByExchange(exchange)) {
@@ -106,16 +94,6 @@ public class ExchangeChatService {
             }
         }
 
-        return toDto(message);
-    }
-
-    private ExchangeChatMessageResponseDTO toDto(ExchangeChatMessage msg) {
-        return ExchangeChatMessageResponseDTO.builder()
-                .id(msg.getId())
-                .content(msg.getContent())
-                .senderId(msg.getSender().getId())
-                .senderName(msg.getSender().getUsername())
-                .timestamp(msg.getTimestamp())
-                .build();
+        return chatMessageMapper.toExchangeChatMessageDTO(message);
     }
 }
