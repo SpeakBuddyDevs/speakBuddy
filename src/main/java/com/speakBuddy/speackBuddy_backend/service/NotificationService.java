@@ -19,10 +19,14 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final NotificationMapper notificationMapper;
 
-    public NotificationService(NotificationRepository notificationRepository, UserRepository userRepository) {
+    public NotificationService(NotificationRepository notificationRepository,
+                               UserRepository userRepository,
+                               NotificationMapper notificationMapper) {
         this.notificationRepository = notificationRepository;
         this.userRepository = userRepository;
+        this.notificationMapper = notificationMapper;
     }
 
     /**
@@ -31,7 +35,7 @@ public class NotificationService {
     @Transactional
     public void createDirectMessageNotification(User recipient, User sender, String chatId, String messagePreview) {
         String title = sender.getName() + " " + sender.getSurname();
-        String body = truncate(messagePreview, 100);
+        String body = notificationMapper.truncate(messagePreview, 100);
 
         Notification notification = Notification.builder()
                 .user(recipient)
@@ -52,7 +56,7 @@ public class NotificationService {
     @Transactional
     public void createExchangeMessageNotification(User recipient, Long exchangeId, String senderName, String messagePreview) {
         String title = "Nuevo mensaje en intercambio";
-        String body = senderName + ": " + truncate(messagePreview, 80);
+        String body = senderName + ": " + notificationMapper.truncate(messagePreview, 80);
 
         Notification notification = Notification.builder()
                 .user(recipient)
@@ -74,7 +78,7 @@ public class NotificationService {
     @Transactional
     public void createExchangeJoinRequestNotification(User recipient, Long exchangeId, User requester, String exchangeTitle) {
         String title = "Solicitud para unirse a intercambio";
-        String body = requester.getUsername() + " quiere unirse a \"" + truncate(exchangeTitle != null ? exchangeTitle : "Intercambio", 50) + "\"";
+        String body = requester.getUsername() + " quiere unirse a \"" + notificationMapper.truncate(exchangeTitle != null ? exchangeTitle : "Intercambio", 50) + "\"";
 
         Notification notification = Notification.builder()
                 .user(recipient)
@@ -97,8 +101,8 @@ public class NotificationService {
     public void createJoinRequestResponseNotification(User recipient, Long exchangeId, String exchangeTitle, boolean accepted) {
         String title = accepted ? "Solicitud aceptada" : "Solicitud rechazada";
         String body = accepted
-                ? "Tu solicitud para unirte a \"" + truncate(exchangeTitle != null ? exchangeTitle : "Intercambio", 50) + "\" ha sido aceptada."
-                : "Tu solicitud para unirte a \"" + truncate(exchangeTitle != null ? exchangeTitle : "Intercambio", 50) + "\" ha sido rechazada.";
+                ? "Tu solicitud para unirte a \"" + notificationMapper.truncate(exchangeTitle != null ? exchangeTitle : "Intercambio", 50) + "\" ha sido aceptada."
+                : "Tu solicitud para unirte a \"" + notificationMapper.truncate(exchangeTitle != null ? exchangeTitle : "Intercambio", 50) + "\" ha sido rechazada.";
 
         Notification notification = Notification.builder()
                 .user(recipient)
@@ -123,7 +127,7 @@ public class NotificationService {
                 ? notificationRepository.findByUser_IdAndReadOrderByCreatedAtDesc(userId, false, pageable)
                 : notificationRepository.findByUser_IdOrderByCreatedAtDesc(userId, pageable);
 
-        return pageResult.map(this::toDto);
+        return pageResult.map(notificationMapper::toDto);
     }
 
     /**
@@ -158,23 +162,4 @@ public class NotificationService {
         }
     }
 
-    private NotificationResponseDTO toDto(Notification n) {
-        return NotificationResponseDTO.builder()
-                .id(n.getId())
-                .type(n.getType())
-                .title(n.getTitle())
-                .body(n.getBody())
-                .chatId(n.getChatId())
-                .exchangeId(n.getExchangeId())
-                .requesterUserId(n.getRequester() != null ? n.getRequester().getId() : null)
-                .read(n.getRead())
-                .createdAt(n.getCreatedAt())
-                .build();
-    }
-
-    private String truncate(String s, int maxLen) {
-        if (s == null) return "";
-        if (s.length() <= maxLen) return s;
-        return s.substring(0, maxLen) + "...";
-    }
 }
