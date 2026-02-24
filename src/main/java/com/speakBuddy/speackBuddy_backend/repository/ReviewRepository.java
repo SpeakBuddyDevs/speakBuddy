@@ -10,6 +10,7 @@ import java.util.Optional;
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, Long> {
 
-
     Optional<Review> findByReviewerAndReviewee(User reviewer, User reviewee);
+
+    long countByRevieweeAndScore(User reviewee, int score);
 }

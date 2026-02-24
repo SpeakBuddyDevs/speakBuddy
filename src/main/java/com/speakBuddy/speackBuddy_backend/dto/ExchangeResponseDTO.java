@@ -1,0 +1,67 @@
+package com.speakBuddy.speackBuddy_backend.dto;
+
+import com.speakBuddy.speackBuddy_backend.models.ExchangeStatus;
+import lombok.Builder;
+import lombok.Data;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Data
+@Builder
+public class ExchangeResponseDTO {
+    private Long id;
+    private LocalDateTime scheduledAt;
+    private Integer durationMinutes;
+    private ExchangeStatus status;
+    private String type;
+    private String title;
+    private LocalDateTime createdAt;
+    private List<ExchangeParticipantDTO> participants;
+
+    /**
+     * true si el usuario actual puede confirmar (status=ENDED_PENDING_CONFIRMATION y no ha confirmado aún)
+     */
+    private boolean canConfirm;
+
+    /**
+     * true si todos han confirmado y el intercambio está completado
+     */
+    private boolean allConfirmed;
+
+    /**
+     * Fecha del último mensaje del chat del intercambio (null si no hay mensajes).
+     * El cliente lo usa para mostrar indicador "mensajes nuevos".
+     */
+    private LocalDateTime lastMessageAt;
+
+    /**
+     * Contraseña del intercambio privado. Solo visible para el creador.
+     */
+    private String password;
+
+    /**
+     * Nombre del idioma nativo que el creador ofrece (ej: "Español")
+     */
+    private String nativeLanguage;
+
+    /**
+     * Nombre del idioma que el creador quiere practicar (ej: "Inglés")
+     */
+    private String targetLanguage;
+
+    /**
+     * Plataformas de videollamada (Zoom, Google Meet, etc.)
+     */
+    private List<String> platforms;
+
+    /**
+     * Número máximo de participantes (null = sin límite)
+     */
+    private Integer maxParticipants;
+
+    /**
+     * Temas de conversación opcionales (ej: Viajes, turismo, cultura)
+     */
+    private List<String> topics;
+}

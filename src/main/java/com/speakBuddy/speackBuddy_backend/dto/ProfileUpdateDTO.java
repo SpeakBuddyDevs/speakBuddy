@@ -11,4 +11,5 @@ public class ProfileUpdateDTO {
     private String name;
     private String surname;
     private String profilePictureUrl;
+    private String description;
 }

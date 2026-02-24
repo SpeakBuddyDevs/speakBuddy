@@ -1,6 +1,6 @@
 package com.speakBuddy.speackBuddy_backend.service;
 
-import com.speakBuddy.speackBuddy_backend.dto.ChatMessageDTO;
+import com.speakBuddy.speackBuddy_backend.dto.*;
 import com.speakBuddy.speackBuddy_backend.exception.ResourceNotFoundException;
 import com.speakBuddy.speackBuddy_backend.models.ChatMessage;
 import com.speakBuddy.speackBuddy_backend.models.User;
@@ -17,19 +17,21 @@ public class ChatService {
 
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
+    private final ChatMessageMapper chatMessageMapper;
 
-    public ChatService(ChatMessageRepository chatMessageRepository, UserRepository userRepository) {
+    public ChatService(ChatMessageRepository chatMessageRepository,
+                       UserRepository userRepository,
+                       NotificationService notificationService,
+                       ChatMessageMapper chatMessageMapper) {
         this.chatMessageRepository = chatMessageRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
+        this.chatMessageMapper = chatMessageMapper;
     }
 
-    /**
-     * Guarda un mensaje en la base de datos.
-     * Convierte el DTO (Strings) a Entidad (Users).
-     */
     @Transactional
     public ChatMessageDTO saveMessage(ChatMessageDTO chatMessageDTO) {
-
         User sender = userRepository.findByEmail(chatMessageDTO.getSender())
                 .orElseThrow(() -> new ResourceNotFoundException("Emisor no encontrado: " + chatMessageDTO.getSender()));
 
@@ -43,32 +45,55 @@ public class ChatService {
                 .build();
 
         ChatMessage savedMessage = chatMessageRepository.save(message);
-
-        // 5. Devolver DTO actualizado (con la fecha real de guardado)
-        return new ChatMessageDTO(
-                savedMessage.getContent(),
-                savedMessage.getSender().getEmail(),
-                savedMessage.getRecipient().getEmail(),
-                ChatMessageDTO.MessageType.CHAT,
-                savedMessage.getTimestamp()
-        );
+        return chatMessageMapper.toChatMessageDTO(savedMessage);
     }
 
-    /**
-     * Obtiene el historial de chat entre dos usuarios.
-     */
-    public List<ChatMessageDTO> getChatHistory(String email1, String email2) {
-        List<ChatMessage> messages = chatMessageRepository.findChatHistory(email1, email2);
+    public String getOrCreateChatId(Long myUserId, Long otherUserId) {
+        userRepository.findById(myUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado: " + myUserId));
+        userRepository.findById(otherUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado: " + otherUserId));
 
-        // Convertir Entidades a DTOs para enviar al Frontend
-        return messages.stream()
-                .map(msg -> new ChatMessageDTO(
-                        msg.getContent(),
-                        msg.getSender().getEmail(),
-                        msg.getRecipient().getEmail(),
-                        ChatMessageDTO.MessageType.CHAT,
-                        msg.getTimestamp()
-                ))
+        long min = Math.min(myUserId, otherUserId);
+        long max = Math.max(myUserId, otherUserId);
+        return "chat_" + min + "_" + max;
+    }
+
+    public List<DirectChatMessageResponseDTO> getMessagesByUserIds(Long myUserId, Long otherUserId) {
+        validateParticipants(myUserId, otherUserId);
+        return chatMessageRepository.findChatHistoryByUserIds(myUserId, otherUserId).stream()
+                .map(chatMessageMapper::toDirectChatMessageDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public DirectChatMessageResponseDTO sendMessageByUserIds(Long myUserId, Long otherUserId, SendDirectMessageRequest request) {
+        validateParticipants(myUserId, otherUserId);
+
+        User sender = userRepository.findById(myUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado: " + myUserId));
+        User recipient = userRepository.findById(otherUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado: " + otherUserId));
+
+        ChatMessage message = ChatMessage.builder()
+                .sender(sender)
+                .recipient(recipient)
+                .content(request.getContent())
+                .build();
+
+        ChatMessage saved = chatMessageRepository.save(message);
+
+        long min = Math.min(myUserId, otherUserId);
+        long max = Math.max(myUserId, otherUserId);
+        String chatId = "chat_" + min + "_" + max;
+        notificationService.createDirectMessageNotification(recipient, sender, chatId, request.getContent());
+
+        return chatMessageMapper.toDirectChatMessageDTO(saved);
+    }
+
+    private void validateParticipants(Long myUserId, Long otherUserId) {
+        if (myUserId.equals(otherUserId)) {
+            throw new IllegalArgumentException("No puedes chatear contigo mismo");
+        }
     }
 }

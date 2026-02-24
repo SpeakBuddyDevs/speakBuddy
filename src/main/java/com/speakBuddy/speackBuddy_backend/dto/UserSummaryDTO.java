@@ -10,6 +10,12 @@ public class UserSummaryDTO {
     private String profilePicture;
     private String nativeLanguage;
     private String nativeLanguageCode;
+    private String country;
+    private Boolean isPro;
+    private Integer level;
+    private Double averageRating;
+    private Integer totalReviews;
+    private Integer exchanges;
 
     private List<LearningSummaryDTO> languagesToLearn;
 

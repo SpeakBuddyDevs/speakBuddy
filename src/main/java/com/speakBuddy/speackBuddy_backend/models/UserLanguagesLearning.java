@@ -33,4 +33,14 @@ public class UserLanguagesLearning {
     @JoinColumn(name = "level_id", nullable = false)
     private LanguageLevel level;
 
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private boolean active = false;
+
+    public UserLanguagesLearning(Long id, User user, Language language, LanguageLevel level) {
+        this.id = id;
+        this.user = user;
+        this.language = language;
+        this.level = level;
+    }
+
 }

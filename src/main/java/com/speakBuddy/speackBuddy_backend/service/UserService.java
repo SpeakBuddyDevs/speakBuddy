@@ -9,48 +9,48 @@ import com.speakBuddy.speackBuddy_backend.models.User;
 import com.speakBuddy.speackBuddy_backend.models.UserLanguagesLearning;
 import com.speakBuddy.speackBuddy_backend.repository.LanguageLevelRepository;
 import com.speakBuddy.speackBuddy_backend.repository.LanguageRepository;
-import com.speakBuddy.speackBuddy_backend.repository.UserLanguageLearningRepository;
 import com.speakBuddy.speackBuddy_backend.repository.UserRepository;
 import com.speakBuddy.speackBuddy_backend.repository.specifications.UserSpecification;
 import com.speakBuddy.speackBuddy_backend.security.Role;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
+/**
+ * Casos de uso de alto nivel sobre usuarios: registro, perfil, búsqueda.
+ * Delega la gestión de idiomas a {@link UserLanguageService} y
+ * el mapeo a DTOs a {@link UserProfileMapper}.
+ */
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
     private final LanguageRepository languageRepository;
     private final LanguageLevelRepository languageLevelRepository;
-    private final UserLanguageLearningRepository userLanguageLearningRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UserProfileMapper profileMapper;
+    private final UserLanguageService languageService;
 
-    @Autowired
     public UserService(UserRepository userRepository,
                        LanguageRepository languageRepository,
                        LanguageLevelRepository languageLevelRepository,
-                       UserLanguageLearningRepository userLanguageLearningRepository,
-                       PasswordEncoder passwordEncoder) {
+                       PasswordEncoder passwordEncoder,
+                       UserProfileMapper profileMapper,
+                       UserLanguageService languageService) {
         this.userRepository = userRepository;
         this.languageRepository = languageRepository;
         this.languageLevelRepository = languageLevelRepository;
-        this.userLanguageLearningRepository = userLanguageLearningRepository;
         this.passwordEncoder = passwordEncoder;
+        this.profileMapper = profileMapper;
+        this.languageService = languageService;
     }
 
-
-    // Metodo principal de lógica de HU 1.1
     public User registerUser(RegisterRequestDTO request) {
-
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new EmailAlreadyExistsException("El email ya está registrado");
         }
@@ -61,297 +61,112 @@ public class UserService {
         String publicUsername = request.getName() + " " + request.getSurname();
 
         User newUser = new User();
-
         newUser.setEmail(request.getEmail());
         newUser.setPassword(passwordEncoder.encode(request.getPassword()));
         newUser.setName(request.getName());
         newUser.setSurname(request.getSurname());
         newUser.setUsername(publicUsername);
-
-        // Asignar la entidad relacionada de Language
+        newUser.setCountry(request.getCountry() != null ? request.getCountry().trim() : null);
         newUser.setNativeLanguage(nativeLanguage);
-
-        // Asignar valores por defecto
         newUser.setLevel(1);
         newUser.setExperiencePoints(0L);
-
-        // Asignar rol por defecto
         newUser.setRole(Role.ROLE_USER);
 
+        if (request.getLearningLanguageId() != null && request.getLearningLanguageId() > 0) {
+            Language learningLanguage = languageRepository.findById(request.getLearningLanguageId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Idioma de aprendizaje no encontrado"));
+            LanguageLevel defaultLevel = languageLevelRepository.findById(1L)
+                    .orElseThrow(() -> new ResourceNotFoundException("Nivel de idioma no encontrado"));
+
+            UserLanguagesLearning learning = new UserLanguagesLearning();
+            learning.setUser(newUser);
+            learning.setLanguage(learningLanguage);
+            learning.setLevel(defaultLevel);
+            learning.setActive(true);
+            newUser.getLanguagesToLearn().add(learning);
+        }
 
         return userRepository.save(newUser);
     }
 
-    // Logica de HU 1.2: Obtener información del usuario (perfil)
     public ProfileResponseDTO getProfile(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        return mapUserToProfileResponseDTO(user);
+        return profileMapper.toProfileResponseDTO(user);
     }
 
-    // Logica de HU 1.2: Actualizar información del usuario (perfil)
     public ProfileResponseDTO updateProfile(Long userId, ProfileUpdateDTO updateDTO) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        // Actualizar solo los campos permitidos
-        user.setName(updateDTO.getName());
-        user.setSurname(updateDTO.getSurname());
-        user.setProfilePicture(updateDTO.getProfilePictureUrl());
+        if (updateDTO.getName() != null) user.setName(updateDTO.getName());
+        if (updateDTO.getSurname() != null) user.setSurname(updateDTO.getSurname());
+        if (updateDTO.getProfilePictureUrl() != null) user.setProfilePicture(updateDTO.getProfilePictureUrl());
+        if (updateDTO.getDescription() != null) user.setDescription(updateDTO.getDescription());
 
-        // Actualizar el nombre de usuario público
-        user.setUsername(updateDTO.getName() + " " + updateDTO.getSurname());
-
-        User updatedUser = userRepository.save(user);
-
-        return mapUserToProfileResponseDTO(updatedUser);
-    }
-
-    public ProfileResponseDTO addLearningLanguage(Long userId, AddLearningLanguageDTO addDTO) {
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        Language language = languageRepository.findById(addDTO.getLanguageId())
-                .orElseThrow(() -> new ResourceNotFoundException("Language not found"));
-
-        LanguageLevel level = languageLevelRepository.findById(addDTO.getLevelId())
-                .orElseThrow(() -> new ResourceNotFoundException("Language level not found"));
-
-        boolean alreadyLearning = user.getLanguagesToLearn().stream()
-                .anyMatch(learning -> learning.getLanguage().getId().equals(language.getId()));
-
-        if (alreadyLearning) {
-            throw new IllegalArgumentException("User is already learning this language");
+        if (updateDTO.getName() != null || updateDTO.getSurname() != null) {
+            user.setUsername(user.getName() + " " + user.getSurname());
         }
 
-        UserLanguagesLearning newLearning = new UserLanguagesLearning();
-        newLearning.setUser(user);
-        newLearning.setLanguage(language);
-        newLearning.setLevel(level);
-
-        user.getLanguagesToLearn().add(newLearning);
-        User updatesdUser = userRepository.save(user);
-
-        return mapUserToProfileResponseDTO(updatesdUser);
+        return profileMapper.toProfileResponseDTO(userRepository.save(user));
     }
 
-    // --- Lógica de HU 1.2: Eliminar Idioma de Aprendizaje ---
-    public ProfileResponseDTO deleteLearningLanguage(Long userId, Long learningId) {
-        // 1. Buscar al usuario
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + userId));
-
-        // 2. Buscar la *relación* de aprendizaje específica
-        UserLanguagesLearning learningToRemove = userLanguageLearningRepository.findById(learningId)
-                .orElseThrow(() -> new ResourceNotFoundException("Relación de aprendizaje no encontrada con ID: " + learningId));
-
-        // 3. ¡VALIDACIÓN DE SEGURIDAD CLAVE!
-        if (!learningToRemove.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("Acceso denegado. La relación no pertenece al usuario.");
-        }
-
-        // 4. Eliminar la relación
-        user.getLanguagesToLearn().remove(learningToRemove);
-        User updatedUser = userRepository.save(user);
-
-        // 5. Devolver el perfil actualizado
-        return mapUserToProfileResponseDTO(updatedUser);
-    }
-
-    // --- Lógica de HU 1.2: Actualizar Idioma Nativo ---
-    public ProfileResponseDTO updateNativeLanguage(Long userId, UpdateNativeLanguageDTO dto) {
-
-        // 1. Buscar al usuario
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        // 2. Buscar la entidad del *nuevo* idioma nativo
-        Language newNativeLanguage = languageRepository.findById(dto.getNewNativeLanguageId())
-                .orElseThrow(() -> new ResourceNotFoundException("Language not found"));
-
-        // 3. Realizar la actualización
-        user.setNativeLanguage(newNativeLanguage);
-
-        // 4. Guardar los cambios en la BBDD
-        User updatedUser = userRepository.save(user);
-
-        // 5. Devolver el perfil completo y actualizado (reutilizando nuestro helper)
-        return mapUserToProfileResponseDTO(updatedUser);
-    }
-
-    // --- Lógica de HU 1.2: Actualizar Nivel de Idioma de Aprendizaje ---
-    public ProfileResponseDTO updateLearningLevel(Long userId, Long learningId, UpdateLearningLevelDTO dto) {
-
-        // 1. Buscar el nuevo nivel al que se quiere actualizar
-        LanguageLevel newLevel = languageLevelRepository.findById(dto.getNewLevelId())
-                .orElseThrow(() -> new ResourceNotFoundException("Nivel de idioma no encontrado con ID: " + dto.getNewLevelId()));
-
-        // 2. Buscar la *relación* de aprendizaje que queremos editar
-        UserLanguagesLearning learningToUpdate = userLanguageLearningRepository.findById(learningId)
-                .orElseThrow(() -> new ResourceNotFoundException("Relación de aprendizaje no encontrada con ID: " + learningId));
-
-        // 3. ¡VALIDACIÓN DE SEGURIDAD CLAVE!
-        if (!learningToUpdate.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Acceso denegado. La relación no pertenece al usuario.");
-        }
-
-        // 4. Realizar la actualización
-        learningToUpdate.setLevel(newLevel);
-
-        // 5. Guardar la entidad de relación actualizada
-        userLanguageLearningRepository.save(learningToUpdate);
-
-        // 6. Devolver el perfil completo y actualizado del usuario
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + userId));
-
-        return mapUserToProfileResponseDTO(user);
-    }
-
-    // --- HU 2.1: Buscador de Usuarios ---
-    public Page<UserSummaryDTO> searchUsers(String nativeLang, String learningLang, Pageable pageable) {
-
-        // 1. Crear la Specification (la "query")
-        Specification<User> spec = UserSpecification.withFilters(nativeLang, learningLang);
-
-        // 2. Ejecutar la búsqueda paginada
-        Page<User> usersPage = userRepository.findAll(spec, pageable);
-
-        // 3. Mapear a DTO ligero
-        return usersPage.map(this::mapUserToSummaryDTO);
-    }
-
-    // Métodos auxiliares para mapeo de entidades a DTOs
-    private ProfileResponseDTO mapUserToProfileResponseDTO(User user) {
-        ProfileResponseDTO dto = new ProfileResponseDTO();
-
-        // Mapeo de campos
-        dto.setId(user.getId());
-        dto.setEmail(user.getEmail());
-        dto.setUsername(user.getUsername());
-        dto.setName(user.getName());
-        dto.setSurname(user.getSurname());
-        dto.setProfilePictureURL(user.getProfilePicture());
-        dto.setLevel(user.getLevel());
-        dto.setExperiencePoints(user.getExperiencePoints());
-
-        //Calculo de experiencia necesaria por nivel
-        //La experiencia necesaria para subir de nivel es 100 veces la del nivel actual
-        long threshold = user.getLevel() * 100L;
-        dto.setXpToNextLevel(threshold);
-
-        if (threshold > 0) {
-            double percentage = (double) user.getExperiencePoints() / threshold;
-            //Aseguramos que no pase del 100% del nivel
-            dto.setProgressPercentage(Math.min(percentage, 1.0));
-        } else {
-            dto.setProgressPercentage(0.0);
-        }
-
-        // Mapeo del idioma nativo
-        if (user.getNativeLanguage() != null) {
-            dto.setNativeLanguage(mapLanguageToDTO(user.getNativeLanguage()));
-        }
-
-        // Mapeo del idioma de aprendizaje
-        Set<LearningLanguageDTO> learningDTOs = user.getLanguagesToLearn().stream()
-                .map(this::mapLearningToDTO)
-                .collect(Collectors.toSet());
-        dto.setLanguagesToLearn(learningDTOs);
-
-        return dto;
-    }
-
-    private LanguageDTO mapLanguageToDTO(Language language) {
-        LanguageDTO dto = new LanguageDTO();
-        dto.setId(language.getId());
-        dto.setName(language.getName());
-        dto.setIsoCode(language.getIsoCode());
-        return dto;
-    }
-
-    private LearningLanguageDTO mapLearningToDTO(UserLanguagesLearning learning) {
-        LearningLanguageDTO dto = new LearningLanguageDTO();
-        // Mapea el idioma dentro de la relación
-        dto.setLanguage(mapLanguageToDTO(learning.getLanguage()));
-        // Mapea el nivel dentro de la relación
-        dto.setLevelName(learning.getLevel().getName());
-        return dto;
-    }
-
-    private UserSummaryDTO mapUserToSummaryDTO(User user) {
-        UserSummaryDTO dto = new UserSummaryDTO();
-        dto.setId(user.getId());
-        dto.setUsername(user.getUsername()); // O user.getName()
-        dto.setProfilePicture(user.getProfilePicture());
-
-        if (user.getNativeLanguage() != null) {
-            dto.setNativeLanguage(user.getNativeLanguage().getName());
-            dto.setNativeLanguageCode(user.getNativeLanguage().getIsoCode());
-        }
-
-        List<UserSummaryDTO.LearningSummaryDTO> learningList = user.getLanguagesToLearn().stream()
-                .map(l -> {
-                    UserSummaryDTO.LearningSummaryDTO lDto = new UserSummaryDTO.LearningSummaryDTO();
-                    lDto.setLanguageName(l.getLanguage().getName());
-                    lDto.setLanguageCode(l.getLanguage().getIsoCode());
-                    lDto.setLevel(l.getLevel().getName());
-                    return lDto;
-                })
-                .collect(Collectors.toList());
-
-        dto.setLanguagesToLearn(learningList);
-        return dto;
+    public Page<UserSummaryDTO> searchUsers(String query, String nativeLang, String learningLang,
+                                            String country, Boolean proOnly, Double minRating,
+                                            Pageable pageable) {
+        Specification<User> spec = UserSpecification.withFilters(query, nativeLang, learningLang, country, proOnly, minRating);
+        return userRepository.findAll(spec, pageable).map(profileMapper::toSummaryDTO);
     }
 
     public UserProfileDTO mapToUserProfileDTO(User user) {
-        // Mapear idiomas aprendiendo
-        List<UserProfileDTO.LearningLanguageDTO> learningDTOs = user.getLanguagesToLearn().stream()
-                .map(l -> UserProfileDTO.LearningLanguageDTO.builder()
-                        .code(l.getLanguage().getIsoCode())
-                        .name(l.getLanguage().getName())
-                        .level(l.getLevel().getName()) // Ej: "A1 - Principiante"
-                        .build())
-                .toList();
-
-        return UserProfileDTO.builder()
-                // Datos Reales
-                .id(user.getId())
-                .name(user.getName() + " " + user.getSurname())
-                .email(user.getEmail())
-                .nativeLanguage(user.getNativeLanguage() != null ? user.getNativeLanguage().getIsoCode() : "ES")
-                .rating(user.getAverageRating())
-                .exchanges(user.getTotalReviews()) // reviews como proxy de intercambios por ahora
-                .learningLanguages(learningDTOs)
-
-                .level(1) // Nivel base
-                .progressPct(0.0)
-                .languagesCount(learningDTOs.size())
-                .hoursTotal(0)
-                .currentStreakDays(0)
-                .bestStreakDays(0)
-                .medals(0)
-                .isPro(false)
-                .avatarUrl(null)
-                .description("¡Hola! Estoy usando SpeakBuddy.") // Descripción por defecto
-                .build();
-    }
-
-    /**
-     * Eliminar el usuario y sus datos
-     * @param email
-     */
-
-    public void deleteUserByEmail(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
-
-        userRepository.delete(user);
+        return profileMapper.toUserProfileDTO(user);
     }
 
     public Optional<User> getUserByEmail(String email) {
         return userRepository.findByEmail(email);
+    }
+
+    public void deleteUserByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        userRepository.delete(user);
+    }
+
+    @Transactional
+    public void updateProfilePicture(Long userId, String imageUrl) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        user.setProfilePicture(imageUrl);
+        userRepository.save(user);
+    }
+
+    // --- Delegaciones a UserLanguageService ---
+
+    public ProfileResponseDTO addLearningLanguage(Long userId, AddLearningLanguageDTO addDTO) {
+        return languageService.addLearningLanguage(userId, addDTO);
+    }
+
+    public ProfileResponseDTO updateNativeLanguage(Long userId, UpdateNativeLanguageDTO dto) {
+        return languageService.updateNativeLanguage(userId, dto);
+    }
+
+    @Transactional
+    public void setLearningLanguageActive(Long userId, String languageCode) {
+        languageService.setLearningLanguageActive(userId, languageCode);
+    }
+
+    @Transactional
+    public void setLearningLanguageInactive(Long userId, String languageCode) {
+        languageService.setLearningLanguageInactive(userId, languageCode);
+    }
+
+    @Transactional
+    public void deleteLearningLanguageByCode(Long userId, String languageCode) {
+        languageService.deleteLearningLanguageByCode(userId, languageCode);
+    }
+
+    @Transactional
+    public void updateLearningLevelByCode(Long userId, String languageCode, Long newLevelId) {
+        languageService.updateLearningLevelByCode(userId, languageCode, newLevelId);
     }
 }
