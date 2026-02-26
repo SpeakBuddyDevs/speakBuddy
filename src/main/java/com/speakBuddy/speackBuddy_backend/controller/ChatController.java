@@ -1,42 +1,43 @@
 package com.speakBuddy.speackBuddy_backend.controller;
 
-import com.speakBuddy.speackBuddy_backend.dto.ChatMessageDTO;
+import com.speakBuddy.speackBuddy_backend.dto.SendDirectMessageRequest;
+import com.speakBuddy.speackBuddy_backend.dto.WebSocketChatMessageDTO;
+import com.speakBuddy.speackBuddy_backend.exception.ResourceNotFoundException;
 import com.speakBuddy.speackBuddy_backend.service.ChatService;
+import com.speakBuddy.speackBuddy_backend.service.UserService;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
+import java.security.Principal;
+
+/**
+ * Controlador WebSocket para chat 1:1 en tiempo real.
+ * Recibe mensajes en /app/chat y delega en ChatService (que guarda y broadcast al destinatario).
+ */
 @Controller
 public class ChatController {
-    private final SimpMessagingTemplate  messagingTemplate;
-    private final ChatService chatService;
 
-    public ChatController(SimpMessagingTemplate messagingTemplate, ChatService chatService) {
-        this.messagingTemplate = messagingTemplate;
+    private final ChatService chatService;
+    private final UserService userService;
+
+    public ChatController(ChatService chatService, UserService userService) {
         this.chatService = chatService;
+        this.userService = userService;
     }
 
     @MessageMapping("/chat")
-    public void processMessage(@Payload ChatMessageDTO chatMessage){
-
-        if (chatMessage.getType() == ChatMessageDTO.MessageType.CHAT){
-            //Solo se guarda en la base de datos si es un mensaje de texto
-            ChatMessageDTO savedMsg = chatService.saveMessage(chatMessage);
-            messagingTemplate.convertAndSendToUser(
-                    savedMsg.getRecipient(),
-                    "/queue/messages",
-                    savedMsg
-            );
-        } else {
-            //Si entra aqui significa que s un mensaje de WEBRTC y se envia directamente al destinatario
-            messagingTemplate.convertAndSendToUser(
-                    chatMessage.getRecipient(),
-                    "/queue/messages",
-                    chatMessage
-            );
+    public void processMessage(@Payload WebSocketChatMessageDTO chatMessage, Principal principal) {
+        if (chatMessage == null || chatMessage.getContent() == null || chatMessage.getRecipientId() == null) {
+            return;
         }
-
+        String senderEmail = principal.getName();
+        Long senderId = userService.getUserByEmail(senderEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"))
+                .getId();
+        Long recipientId = chatMessage.getRecipientId();
+        SendDirectMessageRequest request = new SendDirectMessageRequest();
+        request.setContent(chatMessage.getContent());
+        chatService.sendMessageByUserIds(senderId, recipientId, request);
     }
-
 }

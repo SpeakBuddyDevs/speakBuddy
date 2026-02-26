@@ -6,6 +6,7 @@ import com.speakBuddy.speackBuddy_backend.models.ChatMessage;
 import com.speakBuddy.speackBuddy_backend.models.User;
 import com.speakBuddy.speackBuddy_backend.repository.ChatMessageRepository;
 import com.speakBuddy.speackBuddy_backend.repository.UserRepository;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,15 +20,18 @@ public class ChatService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final ChatMessageMapper chatMessageMapper;
+    private final SimpMessagingTemplate messagingTemplate;
 
     public ChatService(ChatMessageRepository chatMessageRepository,
                        UserRepository userRepository,
                        NotificationService notificationService,
-                       ChatMessageMapper chatMessageMapper) {
+                       ChatMessageMapper chatMessageMapper,
+                       SimpMessagingTemplate messagingTemplate) {
         this.chatMessageRepository = chatMessageRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
         this.chatMessageMapper = chatMessageMapper;
+        this.messagingTemplate = messagingTemplate;
     }
 
     @Transactional
@@ -82,13 +86,17 @@ public class ChatService {
                 .build();
 
         ChatMessage saved = chatMessageRepository.save(message);
+        DirectChatMessageResponseDTO dto = chatMessageMapper.toDirectChatMessageDTO(saved);
 
         long min = Math.min(myUserId, otherUserId);
         long max = Math.max(myUserId, otherUserId);
         String chatId = "chat_" + min + "_" + max;
         notificationService.createDirectMessageNotification(recipient, sender, chatId, request.getContent());
 
-        return chatMessageMapper.toDirectChatMessageDTO(saved);
+        // Broadcast por WebSocket para que el destinatario reciba el mensaje en tiempo real (REST o WebSocket)
+        messagingTemplate.convertAndSendToUser(recipient.getEmail(), "/queue/messages", dto);
+
+        return dto;
     }
 
     private void validateParticipants(Long myUserId, Long otherUserId) {
