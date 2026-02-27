@@ -70,7 +70,16 @@ public class ExchangeMapper {
                 .findFirst()
                 .orElse(null);
 
-        boolean canConfirm = exchange.getStatus() == ExchangeStatus.ENDED_PENDING_CONFIRMATION
+        // Calcular si el intercambio ya terminó (basado en hora actual)
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime endTime = exchange.getScheduledAt().plusMinutes(exchange.getDurationMinutes());
+        boolean hasEnded = !endTime.isAfter(now);
+
+        // canConfirm es true si el intercambio ya terminó, no está cancelado/completado,
+        // el usuario es participante y no ha confirmado aún
+        boolean canConfirm = hasEnded
+                && exchange.getStatus() != ExchangeStatus.COMPLETED
+                && exchange.getStatus() != ExchangeStatus.CANCELLED
                 && currentUserParticipant != null
                 && !currentUserParticipant.isConfirmed();
 
